@@ -20,8 +20,43 @@ USUARIOS = {
 
 HISTORIAL_FILE = "historial.json"
 
-def construir_prompt(transcripcion):
-    return f"""Eres un auditor experto en validación de ventas de telefonía móvil. Evalúa la siguiente transcripción real de una llamada entre un agente y un cliente. No inventes contenido. Solo responde con base en lo que está presente en la transcripción.
+def guardar_en_historial(usuario, score, resumen):
+    fila = {
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "usuario": usuario,
+        "score": score,
+        "resumen": resumen.strip()
+    }
+    try:
+        with open(HISTORIAL_FILE, "r") as f:
+            historial = json.load(f)
+    except FileNotFoundError:
+        historial = []
+
+    historial.insert(0, fila)
+    with open(HISTORIAL_FILE, "w") as f:
+        json.dump(historial, f, indent=2)
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        audio_file = request.files["audio"]
+        audio_path = "static/audio.wav"
+        audio_file.save(audio_path)
+
+        transcript_data = openai.Audio.transcribe(
+            "whisper-1",
+            open(audio_path, "rb"),
+            response_format="verbose_json"
+        )
+
+        segments = transcript_data["segments"]
+        full_text = " ".join([s["text"] for s in segments])
+
+        prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Evalúa la siguiente transcripción real de una llamada entre un agente y un cliente. No inventes contenido. Solo responde con base en lo que está presente en la transcripción.
 
 1. Evalúa si se mencionaron claramente los siguientes puntos. Responde "✅ Cumple" o "❌ No cumple":
 - Permanencia mínima de 3 meses
@@ -40,45 +75,8 @@ def construir_prompt(transcripcion):
 3. Observaciones claras sobre lo que faltó.
 
 Transcripción real:
-{transcripcion}
-"""
-
-
-def mejorar_legibilidad(texto):
-    return re.sub(r'(?<=[.?!]) (?=[A-ZÁÉÍÓÚÑ])', '\n', texto).strip()
-
-
-def guardar_en_historial(usuario, score, resumen):
-    fila = {
-        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "usuario": usuario,
-        "score": score,
-        "resumen": resumen.strip()
-    }
-    try:
-        with open(HISTORIAL_FILE, "r") as f:
-            historial = json.load(f)
-    except FileNotFoundError:
-        historial = []
-
-    historial.insert(0, fila)
-    with open(HISTORIAL_FILE, "w") as f:
-        json.dump(historial, f, indent=2)
-
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if "usuario" not in session:
-        return redirect(url_for("login"))
-
-    if request.method == "POST":
-        audio_file = request.files["audio"]
-        audio_path = "static/audio.wav"
-        audio_file.save(audio_path)
-
-        transcript = openai.Audio.transcribe("whisper-1", open(audio_path, "rb"))
-        transcripcion = mejorar_legibilidad(transcript["text"])
-        prompt = construir_prompt(transcripcion)
+{full_text}
+""" 
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -93,20 +91,17 @@ def index():
         score = score_match.group(1) + "%" if score_match else "N/A"
 
         guardar_en_historial(session["usuario"], score, resultado)
-        return render_template("index.html", transcript=transcripcion, resultado=resultado)
+        return render_template("index.html", segments=segments, resultado=resultado)
 
-    return render_template("index.html", transcript=None, resultado=None)
-
+    return render_template("index.html", segments=None, resultado=None)
 
 @app.route("/historial")
 def historial():
     if "usuario" not in session:
         return redirect(url_for("login"))
-
     with open(HISTORIAL_FILE, "r") as f:
         historial = json.load(f)
     return render_template("historial.html", historial=historial)
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -121,12 +116,10 @@ def login():
             error = "Usuario o contraseña incorrectos"
     return render_template("login.html", error=error)
 
-
 @app.route("/logout")
 def logout():
     session.pop("usuario", None)
     return redirect(url_for("login"))
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

@@ -29,7 +29,6 @@
     <h2>Historial de Evaluaciones</h2>
     <label>Filtrar por mes:</label>
     <input type="month" id="fecha" onchange="filtrar()">
-
     <table>
       <thead>
         <tr><th>Fecha</th><th>Usuario</th><th>Score</th><th>Resumen</th></tr>
@@ -45,7 +44,6 @@
         {% endfor %}
       </tbody>
     </table>
-
     <form method="GET" action="/"><button type="submit">Evaluar nueva llamada</button></form>
     <form method="GET" action="/logout"><button type="submit">Cerrar sesión</button></form>
   </div>
