@@ -1,4 +1,5 @@
 
+
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -20,13 +21,13 @@ def construir_prompt(transcripcion):
     return f"""Eres un auditor experto en validación de ventas de telefonía móvil. Evalúa la siguiente transcripción real de una llamada entre un agente y un cliente. No inventes contenido. Solo responde con base en lo que está presente en la transcripción.
 
 1. Evalúa si se mencionaron claramente los siguientes puntos. Responde "✅ Cumple" o "❌ No cumple":
-- Permanencia mínima de 3 meses
-- Costo de $150 mensual y penalización de $280 si no paga antes del corte
+- Que se mencione en algun momento de la llamada que la Permanencia mínima del servicio es de 3 meses
+- que se mencione que el Costo es de o a partir de $150 mensual y penalización de $280 si no paga antes del corte
 - Proceso de activación (insertar chip si es número nuevo)
 - Portabilidad: debe marcar al 3396901234 opción 2 y tiene 7 días naturales para hacerla desde que recibe el chip
 - Número correcto para activación: 3396901234 opción 2
 - Validación de que es mayor de edad o titular
-- Confirmación de condiciones: $150, red 4.5G, cobertura
+- Confirmación de condiciones: menciona el costo del paquete que el cliente pagara, y que la cobertura que tiene es de una red 4.5
 - Tiempo de entrega del chip: 7 días hábiles
 - Repetición de condiciones del servicio
 - Repetición del tiempo estimado de entrega
@@ -91,3 +92,4 @@ def logout():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
