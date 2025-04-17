@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-  <title>Evaluador ADN - Calidad Megacable</title>
+  <title>Evaluador ADN - Llamadas</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,10 +10,10 @@
       margin: 0;
       padding: 0;
     }
-    header img {
-      width: 100%;
-      height: auto;
-      display: block;
+    header {
+      background-color: #021234;
+      padding: 10px;
+      text-align: center;
     }
     .container {
       padding: 30px;
@@ -44,18 +44,29 @@
       color: black;
       border-radius: 4px;
     }
+    #loader {
+      display: none;
+      font-size: 18px;
+      margin-top: 20px;
+      color: #00b0f0;
+    }
   </style>
+  <script>
+    function showLoader() {
+      document.getElementById('loader').style.display = 'block';
+    }
+  </script>
 </head>
 <body>
   <header>
-    <img src="{{ url_for('static', filename='header.png') }}" alt="Encabezado ADN">
+    <h1>Evaluación de Calidad - ADN</h1>
   </header>
-
   <div class="container">
     {% if not transcript %}
-      <form method="POST" enctype="multipart/form-data">
+      <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
         <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
+        <div id="loader">Procesando llamada... por favor espera</div>
       </form>
     {% else %}
       <div class="resultado">
