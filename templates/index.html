@@ -1,8 +1,7 @@
-
 <!doctype html>
 <html>
 <head>
-  <title>Evaluador ADN - Llamadas</title>
+  <title>Evaluador ADN - Sincronizado</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -22,7 +21,7 @@
       margin: auto;
     }
     h2 { color: #00b0f0; }
-    .resultado, .transcripcion {
+    .resultado {
       background-color: #0f2a60;
       padding: 20px;
       margin-top: 30px;
@@ -30,6 +29,19 @@
       white-space: pre-wrap;
       overflow-x: auto;
       max-width: 100%;
+    }
+    .transcripcion {
+      background-color: #0f2a60;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+    }
+    .segmento {
+      cursor: pointer;
+      padding: 5px 0;
+    }
+    .segmento:hover {
+      background-color: #173b7a;
     }
     button {
       padding: 10px 20px;
@@ -58,6 +70,11 @@
     function showLoader() {
       document.getElementById('loader').style.display = 'block';
     }
+    function playFrom(time) {
+      const audio = document.getElementById("audioPlayer");
+      audio.currentTime = time;
+      audio.play();
+    }
   </script>
 </head>
 <body>
@@ -72,14 +89,23 @@
         <div id="loader">Procesando llamada... por favor espera</div>
       </form>
     {% else %}
+      <audio id="audioPlayer" controls>
+        <source src="{{ url_for('static', filename='audio.wav') }}" type="audio/wav">
+        Tu navegador no soporta audio HTML5.
+      </audio>
+
       <div class="resultado">
         <h2>Resultado:</h2>
         <pre>{{ resultado }}</pre>
       </div>
 
       <div class="transcripcion">
-        <h2>Transcripción:</h2>
-        <pre>{{ transcript }}</pre>
+        <h2>Transcripción (haz clic para reproducir):</h2>
+        {% for segment in segments %}
+          <div class="segmento" onclick="playFrom({{ segment['start'] }})">
+            [{{ "%.2f"|format(segment['start']) }}s] {{ segment['text'] }}
+          </div>
+        {% endfor %}
       </div>
 
       <form method="GET">

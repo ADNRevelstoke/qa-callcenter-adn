@@ -1,5 +1,3 @@
-
-
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -21,13 +19,13 @@ def construir_prompt(transcripcion):
     return f"""Eres un auditor experto en validación de ventas de telefonía móvil. Evalúa la siguiente transcripción real de una llamada entre un agente y un cliente. No inventes contenido. Solo responde con base en lo que está presente en la transcripción.
 
 1. Evalúa si se mencionaron claramente los siguientes puntos. Responde "✅ Cumple" o "❌ No cumple":
-- Que se mencione en algun momento de la llamada que la Permanencia mínima del servicio es de 3 meses
-- que se mencione que el Costo es de o a partir de $150 mensual y penalización de $280 si no paga antes del corte
+- Permanencia mínima de 3 meses
+- Costo de $150 mensual y penalización de $280 si no paga antes del corte
 - Proceso de activación (insertar chip si es número nuevo)
 - Portabilidad: debe marcar al 3396901234 opción 2 y tiene 7 días naturales para hacerla desde que recibe el chip
 - Número correcto para activación: 3396901234 opción 2
 - Validación de que es mayor de edad o titular
-- Confirmación de condiciones: menciona el costo del paquete que el cliente pagara, y que la cobertura que tiene es de una red 4.5
+- Confirmación de condiciones: $150, red 4.5G, cobertura
 - Tiempo de entrega del chip: 7 días hábiles
 - Repetición de condiciones del servicio
 - Repetición del tiempo estimado de entrega
@@ -41,9 +39,6 @@ Transcripción real:
 """
 
 
-def mejorar_legibilidad(texto):
-    return re.sub(r'(?<=[.?!]) (?=[A-ZÁÉÍÓÚÑ])', '\n', texto).strip()
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     if "usuario" not in session:
@@ -51,14 +46,19 @@ def index():
 
     if request.method == "POST":
         audio_file = request.files["audio"]
-        audio_path = "temp.wav"
+        audio_path = "static/audio.wav"
         audio_file.save(audio_path)
 
-        transcript = openai.Audio.transcribe("whisper-1", open(audio_path, "rb"))
-        transcripcion_cruda = transcript["text"]
-        transcripcion = mejorar_legibilidad(transcripcion_cruda)
+        transcript = openai.Audio.transcribe(
+            "whisper-1",
+            open(audio_path, "rb"),
+            response_format="verbose_json"
+        )
 
-        prompt = construir_prompt(transcripcion)
+        segments = transcript["segments"]
+        full_text = " ".join([seg["text"] for seg in segments])
+        prompt = construir_prompt(full_text)
+
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
@@ -68,9 +68,9 @@ def index():
         )
 
         resultado = response.choices[0].message["content"]
-        return render_template("index.html", transcript=transcripcion, resultado=resultado)
+        return render_template("index.html", segments=segments, resultado=resultado, transcript=full_text)
 
-    return render_template("index.html", transcript=None, resultado=None)
+    return render_template("index.html", segments=None, resultado=None, transcript=None)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -92,4 +92,3 @@ def logout():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
