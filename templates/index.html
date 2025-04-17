@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <title>Validación de Calidad - ADN</title>
+  <style>
+    body { font-family: Arial; margin: 40px; }
+    h1 { color: #2c3e50; }
+    .resultado, .transcripcion { margin-top: 30px; white-space: pre-wrap; }
+    .score { font-size: 28px; font-weight: bold; margin: 20px 0; }
+    .score.green { color: green; }
+    .score.red { color: red; }
+    button { margin-top: 20px; padding: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Evaluación de Calidad de Llamada</h1>
+
+  {% if not transcript %}
+    <form method="POST" enctype="multipart/form-data">
+      <input type="file" name="audio" accept=".wav" required>
+      <button type="submit">Procesar</button>
+    </form>
+  {% else %}
+    <div class="resultado">
+      <h2>Resultado:</h2>
+      <pre>{{ resultado }}</pre>
+    </div>
+
+    <div class="transcripcion">
+      <h2>Transcripción estructurada:</h2>
+      <pre>{{ transcript }}</pre>
+    </div>
+
+    <form method="GET">
+      <button type="submit">Evaluar otra llamada</button>
+    </form>
+  {% endif %}
+</body>
+</html>
