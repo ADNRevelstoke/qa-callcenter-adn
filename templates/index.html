@@ -1,86 +1,27 @@
 <!doctype html>
 <html>
 <head>
-  <title>Evaluador ADN - Sincronizado</title>
+  <title>Evaluador ADN</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #031b4e;
-      color: white;
-      margin: 0;
-      padding: 0;
-    }
-    header img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    .container {
-      padding: 30px;
-      max-width: 900px;
-      margin: auto;
-    }
+    body { font-family: Arial; background: #031b4e; color: white; margin: 0; padding: 0; }
+    header img { width: 100%; display: block; }
+    .container { max-width: 900px; margin: auto; padding: 30px; }
     h2 { color: #00b0f0; }
-    .resultado {
-      background-color: #0f2a60;
-      padding: 20px;
-      margin-top: 30px;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      overflow-x: auto;
-      max-width: 100%;
+    .resultado, .transcripcion {
+      background: #0f2a60; padding: 20px; margin-top: 30px; border-radius: 8px; white-space: pre-wrap;
     }
-    .transcripcion {
-      background-color: #0f2a60;
-      padding: 20px;
-      margin-top: 30px;
-      border-radius: 8px;
-    }
-    .segmento {
-      cursor: pointer;
-      padding: 5px 0;
-    }
-    .segmento:hover {
-      background-color: #173b7a;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 30px;
-      background-color: #00b0f0;
-      color: #031b4e;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    input[type=file] {
-      padding: 10px;
-      background: white;
-      color: black;
-      border-radius: 4px;
-    }
-    #loader {
-      display: none;
-      font-size: 18px;
-      margin-top: 20px;
-      color: #00b0f0;
-    }
+    button { padding: 10px 20px; font-size: 16px; margin-top: 30px; background: #00b0f0; color: #031b4e; border: none; border-radius: 4px; cursor: pointer; }
+    input[type=file] { padding: 10px; background: white; color: black; border-radius: 4px; }
+    #loader { display: none; font-size: 18px; margin-top: 20px; color: #00b0f0; }
   </style>
   <script>
     function showLoader() {
       document.getElementById('loader').style.display = 'block';
     }
-    function playFrom(time) {
-      const audio = document.getElementById("audioPlayer");
-      audio.currentTime = time;
-      audio.play();
-    }
   </script>
 </head>
 <body>
-  <header>
-    <img src="{{ url_for('static', filename='header.png') }}" alt="Encabezado ADN">
-  </header>
+  <header><img src="{{ url_for('static', filename='header.png') }}"></header>
   <div class="container">
     {% if not transcript %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
@@ -89,28 +30,9 @@
         <div id="loader">Procesando llamada... por favor espera</div>
       </form>
     {% else %}
-      <audio id="audioPlayer" controls>
-        <source src="{{ url_for('static', filename='audio.wav') }}" type="audio/wav">
-        Tu navegador no soporta audio HTML5.
-      </audio>
-
-      <div class="resultado">
-        <h2>Resultado:</h2>
-        <pre>{{ resultado }}</pre>
-      </div>
-
-      <div class="transcripcion">
-        <h2>Transcripción (haz clic para reproducir):</h2>
-        {% for segment in segments %}
-          <div class="segmento" onclick="playFrom({{ segment['start'] }})">
-            [{{ "%.2f"|format(segment['start']) }}s] {{ segment['text'] }}
-          </div>
-        {% endfor %}
-      </div>
-
-      <form method="GET">
-        <button type="submit">Evaluar otra llamada</button>
-      </form>
+      <div class="resultado"><h2>Resultado:</h2><pre>{{ resultado }}</pre></div>
+      <div class="transcripcion"><h2>Transcripción:</h2><pre>{{ transcript }}</pre></div>
+      <form method="GET"><button type="submit">Evaluar otra llamada</button></form>
     {% endif %}
   </div>
 </body>

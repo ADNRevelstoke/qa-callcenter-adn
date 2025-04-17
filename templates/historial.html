@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <title>Historial - ADN</title>
+  <style>
+    body { font-family: Arial; background: #031b4e; color: white; margin: 0; padding: 0; }
+    header img { width: 100%; display: block; }
+    .container { max-width: 1000px; margin: auto; padding: 30px; }
+    h2 { color: #00b0f0; }
+    table { width: 100%; background: white; color: black; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: left; }
+    select, input[type=date] { margin-right: 10px; padding: 5px; }
+  </style>
+  <script>
+    function filtrar() {
+      const fecha = document.getElementById("fecha").value;
+      const rows = document.querySelectorAll("tbody tr");
+      rows.forEach(row => {
+        const rowDate = row.getAttribute("data-date");
+        row.style.display = (!fecha || rowDate.startsWith(fecha)) ? "" : "none";
+      });
+    }
+  </script>
+</head>
+<body>
+  <header><img src="{{ url_for('static', filename='header.png') }}"></header>
+  <div class="container">
+    <h2>Historial de Evaluaciones</h2>
+    <label>Filtrar por mes:</label>
+    <input type="month" id="fecha" onchange="filtrar()">
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Usuario</th><th>Score</th><th>Resumen</th></tr>
+      </thead>
+      <tbody>
+        {% for fila in historial %}
+        <tr data-date="{{ fila.fecha[:7] }}">
+          <td>{{ fila.fecha }}</td>
+          <td>{{ fila.usuario }}</td>
+          <td>{{ fila.score }}</td>
+          <td><pre style="white-space: pre-wrap;">{{ fila.resumen }}</pre></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>
