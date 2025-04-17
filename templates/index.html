@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -10,10 +11,10 @@
       margin: 0;
       padding: 0;
     }
-    header {
-      background-color: #021234;
-      padding: 10px;
-      text-align: center;
+    header img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
     .container {
       padding: 30px;
@@ -27,6 +28,8 @@
       margin-top: 30px;
       border-radius: 8px;
       white-space: pre-wrap;
+      overflow-x: auto;
+      max-width: 100%;
     }
     button {
       padding: 10px 20px;
@@ -59,7 +62,7 @@
 </head>
 <body>
   <header>
-    <h1>Evaluación de Calidad - ADN</h1>
+    <img src="{{ url_for('static', filename='header.png') }}" alt="Encabezado ADN">
   </header>
   <div class="container">
     {% if not transcript %}
