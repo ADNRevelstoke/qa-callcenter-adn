@@ -1,39 +1,77 @@
 <!doctype html>
 <html>
 <head>
-  <title>Validación de Calidad - ADN</title>
+  <title>Evaluador ADN - Calidad Megacable</title>
   <style>
-    body { font-family: Arial; margin: 40px; }
-    h1 { color: #2c3e50; }
-    .resultado, .transcripcion { margin-top: 30px; white-space: pre-wrap; }
-    .score { font-size: 28px; font-weight: bold; margin: 20px 0; }
-    .score.green { color: green; }
-    .score.red { color: red; }
-    button { margin-top: 20px; padding: 10px; font-size: 16px; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #031b4e;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    header img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .container {
+      padding: 30px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h2 { color: #00b0f0; }
+    .resultado, .transcripcion {
+      background-color: #0f2a60;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 30px;
+      background-color: #00b0f0;
+      color: #031b4e;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    input[type=file] {
+      padding: 10px;
+      background: white;
+      color: black;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  <h1>Evaluación de Calidad de Llamada</h1>
+  <header>
+    <img src="{{ url_for('static', filename='header.png') }}" alt="Encabezado ADN">
+  </header>
 
-  {% if not transcript %}
-    <form method="POST" enctype="multipart/form-data">
-      <input type="file" name="audio" accept=".wav" required>
-      <button type="submit">Procesar</button>
-    </form>
-  {% else %}
-    <div class="resultado">
-      <h2>Resultado:</h2>
-      <pre>{{ resultado }}</pre>
-    </div>
+  <div class="container">
+    {% if not transcript %}
+      <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="audio" accept=".wav" required>
+        <button type="submit">Evaluar llamada</button>
+      </form>
+    {% else %}
+      <div class="resultado">
+        <h2>Resultado:</h2>
+        <pre>{{ resultado }}</pre>
+      </div>
 
-    <div class="transcripcion">
-      <h2>Transcripción estructurada:</h2>
-      <pre>{{ transcript }}</pre>
-    </div>
+      <div class="transcripcion">
+        <h2>Transcripción:</h2>
+        <pre>{{ transcript }}</pre>
+      </div>
 
-    <form method="GET">
-      <button type="submit">Evaluar otra llamada</button>
-    </form>
-  {% endif %}
+      <form method="GET">
+        <button type="submit">Evaluar otra llamada</button>
+      </form>
+    {% endif %}
+  </div>
 </body>
 </html>
