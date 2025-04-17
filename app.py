@@ -56,6 +56,12 @@ def index():
         return render_template("index.html", transcript=transcripcion, resultado=resultado)
 
     return render_template("index.html", transcript=None, resultado=None)
-
+@app.route("/check-api")
+def check_api():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key and api_key.startswith("sk-"):
+        return "✅ API key cargada correctamente."
+    else:
+        return "❌ No se detectó la API key en el entorno."
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
