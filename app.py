@@ -60,7 +60,7 @@ def index():
 
 1. Evalúa si se mencionaron claramente los siguientes puntos. Responde "✅ Cumple" o "❌ No cumple":
 - Permanencia mínima de 3 meses
-- Mención o confirmación del costo del paquete ($150 o $280, según sea el plan contratado)
+- Mención o confirmación del costo del paquete ($150, $280 o $330, según sea el plan contratado)
 - Proceso de activación (insertar chip si es número nuevo)
 - Portabilidad: debe marcar al 3396901234 opción 2 y tiene 7 días naturales para hacerla desde que recibe el chip
 - Número correcto para activación: 3396901234 opción 2
@@ -74,8 +74,10 @@ def index():
 
 3. Observaciones claras sobre lo que faltó.
 
+
 Transcripción real:
-{{full_text}}"""
+{full_text}
+""".replace("{full_text}", full_text)
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
