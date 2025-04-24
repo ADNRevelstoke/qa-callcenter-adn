@@ -1,66 +1,108 @@
+
 <!doctype html>
 <html>
 <head>
-  <title>Evaluador ADN</title>
+  <title>Evaluador ADN - Llamadas</title>
   <style>
-    body { font-family: Arial; background: #031b4e; color: white; margin: 0; padding: 0; }
-    header img { width: 100%; display: block; }
-    .container { max-width: 900px; margin: auto; padding: 30px; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #031b4e;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #021234;
+      padding: 10px;
+      text-align: center;
+    }
+    .container {
+      padding: 30px;
+      max-width: 900px;
+      margin: auto;
+    }
     h2 { color: #00b0f0; }
     .resultado, .transcripcion {
-      background: #0f2a60; padding: 20px; margin-top: 30px; border-radius: 8px;
+      background-color: #0f2a60;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      text-align: justify;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
-    .segmento { cursor: pointer; padding: 5px 0; }
-    .segmento:hover { background-color: #173b7a; }
-    .activo { background-color: #0055a5 !important; }
+    .sucursal {
+      background-color: #0d2a5a;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 6px;
+      color: #00b0f0;
+      font-weight: bold;
+      font-size: 16px;
+    }
     button {
-      padding: 10px 20px; font-size: 16px; margin: 10px 10px 0 0;
-      background-color: #00b0f0; color: #031b4e;
-      border: none; border-radius: 4px; cursor: pointer;
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 30px;
+      background-color: #00b0f0;
+      color: #031b4e;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
     }
-    input[type=file] { padding: 10px; background: white; color: black; border-radius: 4px; }
-    #loader { display: none; font-size: 18px; margin-top: 20px; color: #00b0f0; }
+    input[type=file] {
+      padding: 10px;
+      background: white;
+      color: black;
+      border-radius: 4px;
+    }
+    #loader {
+      display: none;
+      font-size: 18px;
+      margin-top: 20px;
+      color: #00b0f0;
+    }
   </style>
   <script>
     function showLoader() {
       document.getElementById('loader').style.display = 'block';
     }
-    function playFrom(time, index) {
-      const audio = document.getElementById("audioPlayer");
-      audio.currentTime = time;
-      audio.play();
-      document.querySelectorAll(".segmento").forEach(e => e.classList.remove("activo"));
-      document.getElementById("seg_" + index).classList.add("activo");
-    }
   </script>
 </head>
 <body>
-  <header><img src="{{ url_for('static', filename='header.png') }}"></header>
+  <header>
+    <img src="{{ url_for('static', filename='header.png') }}" alt="Encabezado ADN" style="max-width: 100%; height: auto;">
+  </header>
   <div class="container">
-    {% if not segments %}
+    {% if not transcript %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
         <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
         <div id="loader">Procesando llamada... por favor espera</div>
       </form>
     {% else %}
-      <audio id="audioPlayer" controls>
-        <source src="{{ url_for('static', filename='audio.wav') }}" type="audio/wav">
-        Tu navegador no soporta audio HTML5.
-      </audio>
-      <div class="resultado"><h2>Resultado:</h2><pre>{{ resultado }}</pre></div>
+      {% if sucursal_contrato %}
+        <div class="sucursal">
+          SUCURSAL-CONTRATO: {{ sucursal_contrato }}
+        </div>
+      {% endif %}
+      <div class="resultado">
+        <h2>Resultado:</h2>
+        <pre>{{ resultado }}</pre>
+      </div>
+
       <div class="transcripcion">
         <h2>Transcripción:</h2>
-        {% for s in segments %}
-          <div class="segmento" id="seg_{{ loop.index0 }}" onclick="playFrom({{ s.start }}, {{ loop.index0 }})">
-            [{{ "%.2f"|format(s.start) }}s] {{ s.text }}
-          </div>
+        {% for segment in segments %}
+          <p><strong>[{{ segment.start | round(2) }}s]</strong> {{ segment.text }}</p>
         {% endfor %}
       </div>
-      <form method="GET"><button type="submit">Evaluar otra llamada</button></form>
+
+      <form method="GET">
+        <button type="submit">Evaluar otra llamada</button>
+      </form>
     {% endif %}
-    <form method="GET" action="/historial"><button type="submit">Ver historial</button></form>
-    <form method="GET" action="/logout"><button type="submit">Cerrar sesión</button></form>
   </div>
 </body>
 </html>
