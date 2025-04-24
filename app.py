@@ -1,3 +1,4 @@
+
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -42,6 +43,8 @@ def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
+    sucursal_contrato = ""
+
     if request.method == "POST":
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"
@@ -56,45 +59,63 @@ def index():
         segments = transcript_data["segments"]
         full_text = " ".join([s["text"] for s in segments])
 
-        prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Evalúa la siguiente transcripción real de una llamada entre un agente y un cliente. No inventes contenido. Solo responde con base en lo que está presente en la transcripción.
+        # Extraer sucursal y contrato
+        match = re.search(r"sucursal\s*(\d+)[^\d]+(contrato\s*)?(\d+)", full_text, re.IGNORECASE)
+        if match:
+            sucursal_contrato = f"{match.group(1)}-{match.group(3)}"
 
-1. Evalúa si se mencionaron claramente los siguientes puntos. Responde "✅ Cumple" o "❌ No cumple":
-- Permanencia mínima de 3 meses
-- Mención o confirmación del costo del paquete ($150, $280 o $330, según sea el plan contratado)
-- Proceso de activación (insertar chip si es número nuevo)
-- Portabilidad: debe marcar al 3396901234 opción 2 y tiene 7 días naturales para hacerla desde que recibe el chip
-- Número correcto para activación: 3396901234 opción 2
-- Validación de que es mayor de edad o titular
-- Confirmación de condiciones: $150, red 4.5G, cobertura
-- Tiempo de entrega del chip: 7 días hábiles
-- Repetición de condiciones del servicio
-- Repetición del tiempo estimado de entrega
+        prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
+No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
+Por cada uno de los siguientes criterios, responde únicamente con una de estas opciones:
+• ✅ Cumple
+• ⚠️ Cumple Parcialmente
+• ❌ No cumple
 
-2. Calcula un score final en porcentaje (cada punto vale 10%).
-
-3. Observaciones claras sobre lo que faltó.
-
+Criterios de Evaluación
+1. Permanencia mínima de 3 meses
+  o Evalúa si el asesor menciona que el servicio contratado requiere una permanencia mínima de tres meses.
+  o Debe indicarlo explícitamente, con sinónimos como: mínimo, al menos, obligatorio mantenerlo tres meses, etc.
+2. Mención clara del costo del paquete ($150, $280 o $330)
+  o El asesor debe indicar el precio del paquete de forma clara. Puede omitir la palabra “pesos”, pero el monto debe mencionarse de forma inequívoca.
+  o Evalúa también si explica correctamente las características correspondientes a cada plan:
+    - $150: 7 GB de navegación al mes, redes sociales ilimitadas, llamadas y mensajes ilimitados.
+    - $280: Todo ilimitado. Si el cliente pregunta si puede compartir internet, el asesor debe aclarar que no. Si el cliente no pregunta, este punto no es obligatorio.
+    - $330: Todo ilimitado y sí se puede compartir internet. Solo debe mencionarse si se está comparando con el de $280.
+  o Si el cliente pregunta qué redes sociales están incluidas, el asesor debe decir exactamente estas 7: Facebook, Instagram, X (o Twitter), WhatsApp, Messenger, Snapchat y Telegram.
+3. Proceso de activación del chip
+  o Si el cliente solicita número nuevo, el asesor debe explicar que solo necesita insertar (o sinónimos: ingresar, colocar, introducir, meter) el chip en el teléfono.
+  o Si el cliente desea conservar su número (portabilidad), el asesor debe indicar que debe primero llamar al 3396901234 opción 2 antes de insertar el chip.
+  o Si el cliente dice que no puede anotar, el asesor debe mencionar que esta información está disponible en la página de Megamóvil.
+  o El asesor debe mencionar que en esa llamada el cliente debe decir que quiere hacer la portabilidad y seguir instrucciones del ejecutivo.
+4. Plazo para realizar portabilidad: 7 días naturales
+  o Si aplica portabilidad, el asesor debe mencionar que se cuenta con 7 días naturales a partir de recibir el chip para realizar el proceso.
+5. Validación de mayoría de edad o titularidad
+  o El asesor debe verificar si la persona que contrata es mayor de edad o titular, o bien, si tiene autorización para contratar por el titular.
+6. Confirmación de condiciones técnicas del servicio
+  o Debe mencionarse que el servicio cuenta con cobertura nacional y opera en la red 4.5G (también se acepta: 4.5 o 4.5LTE).
+7. Tiempo estimado de entrega del chip
+  o El asesor debe indicar que el chip será entregado en un máximo de 7 días hábiles. También son válidas frases como “de 5 a 7 días hábiles”.
 
 Transcripción real:
-{full_text}
-""".replace("{full_text}", full_text)
+{{full_text}}
+""".replace("{{full_text}}", full_text)
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Eres un auditor automatizado de calidad en llamadas."},
-                {"role": "user", "content": prompt}
+                {{"role": "system", "content": "Eres un auditor experto en validación de ventas de telefonía móvil. Solo debes evaluar la parte de la llamada anterior a la transferencia a validación o calidad, ignorando todo lo posterior."}},
+                {{"role": "user", "content": prompt}}
             ]
         )
 
         resultado = response.choices[0].message["content"]
-        score_match = re.search(r"(\d{1,3})%", resultado)
+        score_match = re.search(r"(\d{{1,3}})%", resultado)
         score = score_match.group(1) + "%" if score_match else "N/A"
 
         guardar_en_historial(session["usuario"], score, resultado)
-        return render_template("index.html", segments=segments, resultado=resultado)
+        return render_template("index.html", segments=segments, resultado=resultado, sucursal_contrato=sucursal_contrato)
 
-    return render_template("index.html", segments=None, resultado=None)
+    return render_template("index.html", segments=None, resultado=None, sucursal_contrato=None)
 
 @app.route("/historial")
 def historial():
