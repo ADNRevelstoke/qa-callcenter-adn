@@ -103,8 +103,8 @@ Transcripción real:
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {{"role": "system", "content": "Eres un auditor experto en validación de ventas de telefonía móvil. Solo debes evaluar la parte de la llamada anterior a la transferencia a validación o calidad, ignorando todo lo posterior."}},
-                {{"role": "user", "content": prompt}}
+                {"role": "system", "content": "Eres un auditor experto en validación de ventas de telefonía móvil. Solo debes evaluar la parte de la llamada anterior a la transferencia a validación o calidad, ignorando todo lo posterior."},
+                {"role": "user", "content": prompt}
             ]
         )
 
