@@ -43,10 +43,18 @@ def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    sucursal_contrato = ""
-
     if request.method == "POST":
+        print("🔁 POST recibido")
+        if "audio" not in request.files:
+            print("❌ No se encontró 'audio' en request.files")
+            return "No se envió archivo de audio.", 400
+
         audio_file = request.files["audio"]
+        if audio_file.filename == "":
+            print("⚠️ Archivo sin nombre recibido")
+            return "Nombre de archivo vacío.", 400
+
+        print(f"📥 Audio recibido: {audio_file.filename}")
         audio_path = "static/audio.wav"
         audio_file.save(audio_path)
 
@@ -59,14 +67,16 @@ def index():
         segments = transcript_data["segments"]
         full_text = " ".join([s["text"] for s in segments])
 
-        # Buscar después de transferencia a validación
-        validacion_index = next((i for i, s in enumerate(segments) if "validación" in s["text"].lower() or "calidad" in s["text"].lower()), None)
-
-        if validacion_index:
-            post_validacion_text = " ".join([s["text"] for s in segments[validacion_index:]])
-            match = re.search(r"sucursal\s*(\d+)[^\d]+(contrato\s*)?(número\s*)?(\d+)", post_validacion_text, re.IGNORECASE)
-            if match:
-                sucursal_contrato = f"{match.group(1)}-{match.group(4)}"
+        # Buscar Sucursal-Contrato en la transcripción
+        match = re.search(r"contrato (\d+).*?sucursal (\d+)", full_text, re.IGNORECASE)
+        sucursal_contrato = None
+        if match:
+            contrato = match.group(1)
+            sucursal = match.group(2)
+            sucursal_contrato = f"{sucursal}-{contrato}"
+            print("✅ Sucursal-Contrato detectado:", sucursal_contrato)
+        else:
+            print("❌ No se detectó Sucursal-Contrato")
 
         prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
 No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
@@ -92,17 +102,13 @@ Criterios de Evaluación
   o Si el cliente dice que no puede anotar, el asesor debe mencionar que esta información está disponible en la página de Megamóvil.
   o El asesor debe mencionar que en esa llamada el cliente debe decir que quiere hacer la portabilidad y seguir instrucciones del ejecutivo.
 4. Plazo para realizar portabilidad: 7 días naturales
-  o Si aplica portabilidad, el asesor debe mencionar que se cuenta con 7 días naturales a partir de recibir el chip para realizar el proceso.
 5. Validación de mayoría de edad o titularidad
-  o El asesor debe verificar si la persona que contrata es mayor de edad o titular, o bien, si tiene autorización para contratar por el titular.
 6. Confirmación de condiciones técnicas del servicio
-  o Debe mencionarse que el servicio cuenta con cobertura nacional y opera en la red 4.5G (también se acepta: 4.5 o 4.5LTE).
 7. Tiempo estimado de entrega del chip
-  o El asesor debe indicar que el chip será entregado en un máximo de 7 días hábiles. También son válidas frases como “de 5 a 7 días hábiles”.
 
 Transcripción real:
 {full_text}
-""".replace("{full_text}", full_text)
+"""
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -119,7 +125,7 @@ Transcripción real:
         guardar_en_historial(session["usuario"], score, resultado)
         return render_template("index.html", segments=segments, resultado=resultado, sucursal_contrato=sucursal_contrato)
 
-    return render_template("index.html", segments=None, resultado=None, sucursal_contrato=None)
+    return render_template("index.html", segments=None, resultado=None)
 
 @app.route("/historial")
 def historial():
