@@ -59,10 +59,14 @@ def index():
         segments = transcript_data["segments"]
         full_text = " ".join([s["text"] for s in segments])
 
-        # Extraer sucursal y contrato
-        match = re.search(r"sucursal\s*(\d+)[^\d]+(contrato\s*)?(\d+)", full_text, re.IGNORECASE)
-        if match:
-            sucursal_contrato = f"{match.group(1)}-{match.group(3)}"
+        # Buscar después de transferencia a validación
+        validacion_index = next((i for i, s in enumerate(segments) if "validación" in s["text"].lower() or "calidad" in s["text"].lower()), None)
+
+        if validacion_index:
+            post_validacion_text = " ".join([s["text"] for s in segments[validacion_index:]])
+            match = re.search(r"sucursal\s*(\d+)[^\d]+(contrato\s*)?(número\s*)?(\d+)", post_validacion_text, re.IGNORECASE)
+            if match:
+                sucursal_contrato = f"{match.group(1)}-{match.group(4)}"
 
         prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
 No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
@@ -97,8 +101,8 @@ Criterios de Evaluación
   o El asesor debe indicar que el chip será entregado en un máximo de 7 días hábiles. También son válidas frases como “de 5 a 7 días hábiles”.
 
 Transcripción real:
-{{full_text}}
-""".replace("{{full_text}}", full_text)
+{full_text}
+""".replace("{full_text}", full_text)
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -109,7 +113,7 @@ Transcripción real:
         )
 
         resultado = response.choices[0].message["content"]
-        score_match = re.search(r"(\d{{1,3}})%", resultado)
+        score_match = re.search(r"(\d{1,3})%", resultado)
         score = score_match.group(1) + "%" if score_match else "N/A"
 
         guardar_en_historial(session["usuario"], score, resultado)
