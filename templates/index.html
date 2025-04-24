@@ -44,7 +44,8 @@
     button {
       padding: 10px 20px;
       font-size: 16px;
-      margin-top: 30px;
+      margin-top: 20px;
+      margin-right: 10px;
       background-color: #00b0f0;
       color: #031b4e;
       border: none;
@@ -81,6 +82,12 @@
         <button type="submit">Evaluar llamada</button>
         <div id="loader">Procesando llamada... por favor espera</div>
       </form>
+      <form action="{{ url_for('historial') }}" method="GET">
+        <button type="submit">Ir al historial</button>
+      </form>
+      <form action="{{ url_for('logout') }}" method="GET">
+        <button type="submit">Cerrar sesión</button>
+      </form>
     {% else %}
       {% if sucursal_contrato %}
         <div class="sucursal">
@@ -101,6 +108,12 @@
 
       <form method="GET">
         <button type="submit">Evaluar otra llamada</button>
+      </form>
+      <form action="{{ url_for('historial') }}" method="GET">
+        <button type="submit">Ir al historial</button>
+      </form>
+      <form action="{{ url_for('logout') }}" method="GET">
+        <button type="submit">Cerrar sesión</button>
       </form>
     {% endif %}
   </div>
