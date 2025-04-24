@@ -57,6 +57,7 @@
       background: white;
       color: black;
       border-radius: 4px;
+      margin-top: 15px;
     }
     #loader {
       display: none;
@@ -79,6 +80,7 @@
     {% if not transcript %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
         <input type="file" name="audio" accept=".wav" required>
+        <br>
         <button type="submit">Evaluar llamada</button>
         <div id="loader">Procesando llamada... por favor espera</div>
       </form>
