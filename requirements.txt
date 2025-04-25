@@ -3,3 +3,4 @@ openai==0.28
 python-dotenv
 gspread
 oauth2client
+pandas

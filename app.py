@@ -1,4 +1,3 @@
-
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -15,27 +14,22 @@ load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY", "MISSING_KEY")
 
+HISTORIAL_FILE = "historial.json"
+
 def cargar_usuarios_desde_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("auth/credentials.json", scope)
+    credentials_info = json.loads(os.environ["GOOGLE_SHEETS_CREDENTIALS_JSON"])
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
     client = gspread.authorize(creds)
     sheet = client.open_by_key("1G-as9aEiRxddDt-56QOexq00jBtpWLvFHyHEERwItW4").worksheet("Lista")
     records = sheet.get_all_records()
 
     usuarios = {}
     for row in records:
-        usuario = row["NombreUsuario"]
-        password = row["Password"]
-        usuarios[usuario] = {
-            "password": password,
-            "nombre": row["NombreCompleto"],
-            "rol": row["Rol"]
-        }
+        usuarios[row["NombreUsuario"]] = row["Password"]
     return usuarios
 
 USUARIOS = cargar_usuarios_desde_sheets()
-
-HISTORIAL_FILE = "historial.json"
 
 def guardar_en_historial(usuario, score, resumen):
     fila = {
@@ -64,9 +58,10 @@ def index():
         audio_path = "static/audio.wav"
         audio_file.save(audio_path)
 
+        audio_file.seek(0)
         transcript_data = openai.Audio.transcribe(
-            "whisper-1",
-            open(audio_path, "rb"),
+            model="whisper-1",
+            file=audio_file,
             response_format="verbose_json"
         )
 
@@ -135,7 +130,7 @@ def login():
     if request.method == "POST":
         usuario = request.form["username"]
         clave = request.form["password"]
-        if usuario in USUARIOS and USUARIOS[usuario]["password"] == clave:
+        if usuario in USUARIOS and USUARIOS[usuario] == clave:
             session["usuario"] = usuario
             return redirect(url_for("index"))
         else:
