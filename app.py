@@ -1,3 +1,4 @@
+
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -13,7 +14,6 @@ app.secret_key = "supersecreto"
 load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY", "MISSING_KEY")
-
 HISTORIAL_FILE = "historial.json"
 
 def cargar_usuarios_desde_sheets():
@@ -21,12 +21,9 @@ def cargar_usuarios_desde_sheets():
     credentials_info = json.loads(os.environ["GOOGLE_SHEETS_CREDENTIALS_JSON"])
     creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
     client = gspread.authorize(creds)
-    sheet = client.open_by_key("1G-as9aEiRxddDt-56QOexq00jBtpWLvFHyHEERwItW4").worksheet("Lista")
-    records = sheet.get_all_records()
-
-    usuarios = {}
-    for row in records:
-        usuarios[row["NombreUsuario"]] = row["Password"]
+    sheet = client.open_by_key(os.environ["SHEET_ID"]).worksheet("Lista")
+    data = sheet.get_all_records()
+    usuarios = {row["NombreUsuario"]: {"password": row["Password"], "rol": row["Rol"], "nombre": row["NombreCompleto"]} for row in data}
     return usuarios
 
 USUARIOS = cargar_usuarios_desde_sheets()
@@ -52,16 +49,17 @@ def guardar_en_historial(usuario, score, resumen):
 def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
+    if session.get("rol") == "ejecutivo":
+        return redirect(url_for("dashboard"))
 
     if request.method == "POST":
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"
         audio_file.save(audio_path)
 
-        audio_file.seek(0)
         transcript_data = openai.Audio.transcribe(
-            model="whisper-1",
-            file=audio_file,
+            "whisper-1",
+            open(audio_path, "rb"),
             response_format="verbose_json"
         )
 
@@ -124,22 +122,38 @@ def historial():
         historial = json.load(f)
     return render_template("historial.html", historial=historial)
 
+@app.route("/dashboard")
+def dashboard():
+    if "usuario" not in session or session.get("rol") != "ejecutivo":
+        return redirect(url_for("login"))
+    with open(HISTORIAL_FILE, "r") as f:
+        historial = json.load(f)
+    usuario = session["usuario"]
+    historial_usuario = [h for h in historial if h["usuario"] == usuario]
+    return render_template("dashboard.html", historial=historial_usuario, nombre=session.get("nombre"))
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
     if request.method == "POST":
         usuario = request.form["username"]
         clave = request.form["password"]
-        if usuario in USUARIOS and USUARIOS[usuario] == clave:
+        user_data = USUARIOS.get(usuario)
+        if user_data and user_data["password"] == clave:
             session["usuario"] = usuario
-            return redirect(url_for("index"))
+            session["rol"] = user_data["rol"]
+            session["nombre"] = user_data["nombre"]
+            if user_data["rol"] == "ejecutivo":
+                return redirect(url_for("dashboard"))
+            else:
+                return redirect(url_for("index"))
         else:
             error = "Usuario o contraseña incorrectos"
     return render_template("login.html", error=error)
 
 @app.route("/logout")
 def logout():
-    session.pop("usuario", None)
+    session.clear()
     return redirect(url_for("login"))
 
 if __name__ == "__main__":

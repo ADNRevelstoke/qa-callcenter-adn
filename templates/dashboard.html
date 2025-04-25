@@ -1,0 +1,95 @@
+
+<!doctype html>
+<html>
+<head>
+  <title>Dashboard del Ejecutivo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #031b4e;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #021234;
+      padding: 10px;
+      text-align: center;
+    }
+    .container {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    h1 {
+      color: #00b0f0;
+    }
+    .resumen {
+      background-color: #0f2a60;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .boton-cerrar {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #00b0f0;
+      color: #031b4e;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #102a54;
+    }
+    th, td {
+      border: 1px solid #00b0f0;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #021234;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="{{ url_for('static', filename='header.png') }}" style="max-width: 100%; height: auto;">
+  </header>
+  <div class="container">
+    <h1>Dashboard de {{ nombre_usuario }}</h1>
+    <div class="resumen">
+      <h2>Resumen de Auditorías</h2>
+      {% if historial %}
+        <table>
+          <tr>
+            <th>Fecha</th>
+            <th>Evaluador</th>
+            <th>Calificación</th>
+            <th>Observaciones</th>
+          </tr>
+          {% for registro in historial %}
+            <tr>
+              <td>{{ registro.fecha }}</td>
+              <td>{{ registro.usuario }}</td>
+              <td>{{ registro.score }}</td>
+              <td><pre>{{ registro.resumen }}</pre></td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p>No se encontraron auditorías para este usuario.</p>
+      {% endif %}
+    </div>
+    <form method="GET" action="{{ url_for('logout') }}" class="boton-cerrar">
+      <button type="submit">Cerrar sesión</button>
+    </form>
+  </div>
+</body>
+</html>
