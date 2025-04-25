@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -30,8 +31,14 @@
       word-break: break-word;
     }
     .transcripcion p {
-      margin: 2px 0;
+      margin: 1px 0;
       line-height: 1.2;
+      cursor: pointer;
+    }
+    .transcripcion p.active {
+      background-color: #004080;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
     .button-row {
       margin-top: 30px;
@@ -65,6 +72,13 @@
     function showLoader() {
       document.getElementById('loader').style.display = 'block';
     }
+    function activatePlayback(start, id) {
+      const audio = document.getElementById('audio');
+      audio.currentTime = start;
+      audio.play();
+      document.querySelectorAll(".transcripcion p").forEach(p => p.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
   </script>
 </head>
 <body>
@@ -89,7 +103,7 @@
         <h2>Transcripción:</h2>
         <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}"></audio>
         {% for s in segments %}
-          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }};document.getElementById('audio').play();">
+          <p id="segment{{ loop.index0 }}" onclick="activatePlayback({{ s['start'] }}, 'segment{{ loop.index0 }}')">
             {{ s['text'] }}
           </p>
         {% endfor %}
@@ -107,7 +121,6 @@
         <button type="submit">Cerrar sesión</button>
       </form>
     </div>
-
   </div>
 </body>
 </html>
