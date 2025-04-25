@@ -75,8 +75,20 @@ Por cada uno de los siguientes criterios, responde únicamente con una de estas 
 
 Criterios de Evaluación
 1. Permanencia mínima de 3 meses
+  o Evalúa si el asesor menciona que el servicio contratado requiere una permanencia mínima de tres meses.
+  o Debe indicarlo explícitamente, con sinónimos como: mínimo, al menos, obligatorio mantenerlo tres meses, etc.
 2. Mención clara del costo del paquete ($150, $280 o $330)
+  o El asesor debe indicar el precio del paquete de forma clara. Puede omitir la palabra “pesos”, pero el monto debe mencionarse de forma inequívoca.
+  o Evalúa también si explica correctamente las características correspondientes a cada plan:
+    - $150: 7 GB de navegación al mes, redes sociales ilimitadas, llamadas y mensajes ilimitados.
+    - $280: Todo ilimitado. Si el cliente pregunta si puede compartir internet, el asesor debe aclarar que no. Si el cliente no pregunta, este punto no es obligatorio.
+    - $330: Todo ilimitado y sí se puede compartir internet. Solo debe mencionarse si se está comparando con el de $280.
+  o Si el cliente pregunta qué redes sociales están incluidas, el asesor debe decir exactamente estas 7: Facebook, Instagram, X (o Twitter), WhatsApp, Messenger, Snapchat y Telegram.
 3. Proceso de activación del chip
+  o Si el cliente solicita número nuevo, el asesor debe explicar que solo necesita insertar (o sinónimos: ingresar, colocar, introducir, meter) el chip en el teléfono.
+  o Si el cliente desea conservar su número (portabilidad), el asesor debe indicar que debe primero llamar al 3396901234 opción 2 antes de insertar el chip.
+  o Si el cliente dice que no puede anotar, el asesor debe mencionar que esta información está disponible en la página de Megamóvil.
+  o El asesor debe mencionar que en esa llamada el cliente debe decir que quiere hacer la portabilidad y seguir instrucciones del ejecutivo.
 4. Plazo para realizar portabilidad: 7 días naturales
 5. Validación de mayoría de edad o titularidad
 6. Confirmación de condiciones técnicas del servicio
