@@ -1,4 +1,3 @@
-
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -33,7 +32,6 @@ def guardar_en_historial(usuario, score, resumen):
             historial = json.load(f)
     except FileNotFoundError:
         historial = []
-
     historial.insert(0, fila)
     with open(HISTORIAL_FILE, "w") as f:
         json.dump(historial, f, indent=2)
@@ -48,17 +46,16 @@ def index():
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"
         audio_file.save(audio_path)
-        print("📥 Audio recibido:", audio_file.filename)
+        print(f"📥 Audio recibido: {audio_file.filename}")
 
-        with open(audio_path, "rb") as f:
-            transcript_data = openai.audio.transcriptions.create(
-                model="whisper-1",
-                file=f,
-                response_format="verbose_json"
-            )
+        transcript_data = openai.Audio.transcribe(
+            "whisper-1",
+            open(audio_path, "rb"),
+            response_format="verbose_json"
+        )
 
-        segments = transcript_data.segments
-        full_text = " ".join([s.text for s in segments])
+        segments = transcript_data["segments"]
+        full_text = " ".join([s["text"] for s in segments])
 
         prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
 No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
@@ -90,23 +87,22 @@ Criterios de Evaluación
 8. Evaluar que el asesor no mencione las palabras "probar gratis" o "cancelar", si menciona alguna de esas palabras, no cumple este criterio y señalalo
 
 Transcripción real:
-{full_text}
-"""
+{full_text}"""
 
-        response = openai.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Eres un auditor automatizado de calidad en llamadas. Solo debes evaluar la parte de la llamada anterior a la transferencia a validación o calidad, ignorando todo lo posterior."},
+                {"role": "system", "content": "Eres un auditor automatizado de calidad en llamadas."},
                 {"role": "user", "content": prompt}
             ]
         )
 
-        resultado = response.choices[0].message.content
+        resultado = response.choices[0].message["content"]
         score_match = re.search(r"(\d{1,3})%", resultado)
         score = score_match.group(1) + "%" if score_match else "N/A"
 
         guardar_en_historial(session["usuario"], score, resultado)
-        return render_template("index.html", segments=segments, resultado=resultado, transcript=full_text)
+        return render_template("index.html", segments=segments, resultado=resultado)
 
     return render_template("index.html", segments=None, resultado=None)
 
