@@ -35,7 +35,7 @@
       cursor: pointer;
     }
     .transcripcion p:hover {
-      background-color: #005c99;
+      background-color: #003366;
     }
     .button-row {
       margin-top: 30px;
@@ -54,40 +54,33 @@
     }
     input[type=file], select {
       padding: 10px;
-      margin-top: 10px;
       background: white;
       color: black;
       border-radius: 4px;
+      margin-top: 10px;
     }
-    /* Modal */
-    .modal {
+
+    #loaderModal {
       display: none;
       position: fixed;
-      z-index: 10;
-      left: 0; top: 0;
+      top: 0; left: 0;
       width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
     }
-    .modal-content {
-      position: relative;
-      margin: 10% auto;
-      padding: 0;
-      max-width: 600px;
-    }
-    .modal-content video {
-      width: 100%;
-      border-radius: 8px;
+
+    #loaderVideo {
+      width: 640px;
+      height: auto;
+      border: 4px solid white;
+      border-radius: 10px;
     }
   </style>
   <script>
     function showLoader() {
-      document.getElementById('loaderModal').style.display = 'block';
-      document.getElementById('loaderVideo').play();
-    }
-    function closeLoader() {
-      const modal = document.getElementById('loaderModal');
-      modal.style.display = 'none';
-      document.getElementById('loaderVideo').pause();
+      document.getElementById('loaderModal').style.display = 'flex';
     }
   </script>
 </head>
@@ -95,17 +88,18 @@
   <header>
     <img src="{{ url_for('static', filename='header.png') }}" style="max-width: 100%; height: auto;">
   </header>
-
   <div class="container">
+
     {% if not resultado %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
-        {% if session['rol'] == 'evaluador' %}
+        {% if rol == 'evaluador' %}
           <label for="evaluado">Selecciona al ejecutivo evaluado:</label><br>
           <select name="evaluado" required>
-            {% for nombre in ejecutivos %}
-              <option value="{{ nombre }}">{{ nombre }}</option>
+            <option value="">-- Selecciona --</option>
+            {% for usuario in lista_ejecutivos %}
+              <option value="{{ usuario }}">{{ usuario }}</option>
             {% endfor %}
-          </select><br>
+          </select><br><br>
         {% endif %}
         <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
@@ -139,11 +133,12 @@
     </div>
   </div>
 
-  <!-- Modal -->
-  <div id="loaderModal" class="modal">
-    <div class="modal-content">
-      <video id="loaderVideo" src="{{ url_for('static', filename='loader.mp4') }}" autoplay muted></video>
-    </div>
+  <!-- Modal de video -->
+  <div id="loaderModal">
+    <video id="loaderVideo" autoplay muted>
+      <source src="{{ url_for('static', filename='loader.mp4') }}" type="video/mp4">
+      Tu navegador no soporta el video.
+    </video>
   </div>
 </body>
 </html>
