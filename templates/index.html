@@ -69,7 +69,7 @@
     <img src="{{ url_for('static', filename='header.png') }}" style="max-width: 100%; height: auto;">
   </header>
   <div class="container">
-    {% if not transcript %}
+    {% if not resultado %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
         <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
@@ -106,3 +106,4 @@
   </div>
 </body>
 </html>
+
