@@ -6,6 +6,8 @@ import re
 from dotenv import load_dotenv
 from datetime import datetime
 import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 app = Flask(__name__)
 app.secret_key = "supersecreto"
@@ -13,11 +15,25 @@ load_dotenv()
 
 openai.api_key = os.environ.get("OPENAI_API_KEY", "MISSING_KEY")
 
-USUARIOS = {
-    "admin": "adn2025",
-    "calidadadn": "ADN2025*",
-    "CALIDAD1": "calidadADN20205*"
-}
+def cargar_usuarios_desde_sheets():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("auth/credentials.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open_by_key("1G-as9aEiRxddDt-56QOexq00jBtpWLvFHyHEERwItW4").worksheet("Lista")
+    records = sheet.get_all_records()
+
+    usuarios = {}
+    for row in records:
+        usuario = row["NombreUsuario"]
+        password = row["Password"]
+        usuarios[usuario] = {
+            "password": password,
+            "nombre": row["NombreCompleto"],
+            "rol": row["Rol"]
+        }
+    return usuarios
+
+USUARIOS = cargar_usuarios_desde_sheets()
 
 HISTORIAL_FILE = "historial.json"
 
@@ -119,7 +135,7 @@ def login():
     if request.method == "POST":
         usuario = request.form["username"]
         clave = request.form["password"]
-        if usuario in USUARIOS and USUARIOS[usuario] == clave:
+        if usuario in USUARIOS and USUARIOS[usuario]["password"] == clave:
             session["usuario"] = usuario
             return redirect(url_for("index"))
         else:
