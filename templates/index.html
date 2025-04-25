@@ -30,6 +30,10 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .transcripcion p {
+      margin: 2px 0;
+      line-height: 1.2;
+    }
     .button-row {
       margin-top: 30px;
       display: flex;
@@ -69,7 +73,8 @@
     <img src="{{ url_for('static', filename='header.png') }}" style="max-width: 100%; height: auto;">
   </header>
   <div class="container">
-    {% if not resultado %}
+
+    {% if not transcript %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
         <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
@@ -82,27 +87,26 @@
       </div>
 
       <div class="transcripcion">
-        <h2>Transcripción:</h2>
-        <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}" style="margin-bottom: 20px;"></audio>
+        <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}"></audio>
         {% for s in segments %}
-          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }};document.getElementById('audio').play();" style="cursor:pointer;">
+          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }};document.getElementById('audio').play();">
             {{ s['text'] }}
           </p>
         {% endfor %}
       </div>
-
-      <div class="button-row">
-        <form method="GET" action="{{ url_for('index') }}">
-          <button type="submit">Evaluar otra llamada</button>
-        </form>
-        <form method="GET" action="{{ url_for('historial') }}">
-          <button type="submit">Ver historial</button>
-        </form>
-        <form method="GET" action="{{ url_for('logout') }}">
-          <button type="submit">Cerrar sesión</button>
-        </form>
-      </div>
     {% endif %}
+
+    <div class="button-row">
+      <form method="GET" action="{{ url_for('index') }}">
+        <button type="submit">Evaluar otra llamada</button>
+      </form>
+      <form method="GET" action="{{ url_for('historial') }}">
+        <button type="submit">Ver historial</button>
+      </form>
+      <form method="GET" action="{{ url_for('logout') }}">
+        <button type="submit">Cerrar sesión</button>
+      </form>
+    </div>
   </div>
 </body>
 </html>
