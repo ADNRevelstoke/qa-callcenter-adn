@@ -32,6 +32,10 @@
     .transcripcion p {
       margin: 2px 0;
       line-height: 1.2;
+      cursor: pointer;
+    }
+    .transcripcion p:hover {
+      background-color: #005c99;
     }
     .button-row {
       margin-top: 30px;
@@ -48,25 +52,42 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    input[type=file] {
+    input[type=file], select {
       padding: 10px;
+      margin-top: 10px;
       background: white;
       color: black;
       border-radius: 4px;
     }
-    #loader {
+    /* Modal */
+    .modal {
       display: none;
-      text-align: center;
-      margin-top: 20px;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
     }
-    #videoLoader {
-      width: 300px;
+    .modal-content {
+      position: relative;
+      margin: 10% auto;
+      padding: 0;
+      max-width: 600px;
+    }
+    .modal-content video {
+      width: 100%;
       border-radius: 8px;
     }
   </style>
   <script>
     function showLoader() {
-      document.getElementById('loader').style.display = 'block';
+      document.getElementById('loaderModal').style.display = 'block';
+      document.getElementById('loaderVideo').play();
+    }
+    function closeLoader() {
+      const modal = document.getElementById('loaderModal');
+      modal.style.display = 'none';
+      document.getElementById('loaderVideo').pause();
     }
   </script>
 </head>
@@ -74,19 +95,20 @@
   <header>
     <img src="{{ url_for('static', filename='header.png') }}" style="max-width: 100%; height: auto;">
   </header>
-  <div class="container">
 
+  <div class="container">
     {% if not resultado %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
+        {% if session['rol'] == 'evaluador' %}
+          <label for="evaluado">Selecciona al ejecutivo evaluado:</label><br>
+          <select name="evaluado" required>
+            {% for nombre in ejecutivos %}
+              <option value="{{ nombre }}">{{ nombre }}</option>
+            {% endfor %}
+          </select><br>
+        {% endif %}
         <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
-        <div id="loader">
-          <video id="videoLoader" autoplay loop muted>
-            <source src="{{ url_for('static', filename='loader.mp4') }}" type="video/mp4">
-            Tu navegador no soporta video.
-          </video>
-          <p>Procesando llamada... por favor espera</p>
-        </div>
       </form>
     {% else %}
       <div class="resultado">
@@ -115,7 +137,13 @@
         <button type="submit">Cerrar sesión</button>
       </form>
     </div>
+  </div>
 
+  <!-- Modal -->
+  <div id="loaderModal" class="modal">
+    <div class="modal-content">
+      <video id="loaderVideo" src="{{ url_for('static', filename='loader.mp4') }}" autoplay muted></video>
+    </div>
   </div>
 </body>
 </html>
