@@ -67,17 +67,6 @@ def index():
         segments = transcript_data["segments"]
         full_text = " ".join([s["text"] for s in segments])
 
-        # Buscar Sucursal-Contrato en la transcripción
-        match = re.search(r"contrato (\d+).*?sucursal (\d+)", full_text, re.IGNORECASE)
-        sucursal_contrato = None
-        if match:
-            contrato = match.group(1)
-            sucursal = match.group(2)
-            sucursal_contrato = f"{sucursal}-{contrato}"
-            print("✅ Sucursal-Contrato detectado:", sucursal_contrato)
-        else:
-            print("❌ No se detectó Sucursal-Contrato")
-
         prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
 No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
 Por cada uno de los siguientes criterios, responde únicamente con una de estas opciones:
@@ -124,7 +113,7 @@ Transcripción real:
         score = score_match.group(1) + "%" if score_match else "N/A"
 
         guardar_en_historial(session["usuario"], score, resultado)
-        return render_template("index.html", segments=segments, resultado=resultado, sucursal_contrato=sucursal_contrato)
+        return render_template("index.html", segments=segments, resultado=resultado)
 
     return render_template("index.html", segments=None, resultado=None)
 
