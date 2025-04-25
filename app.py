@@ -93,7 +93,7 @@ Criterios de Evaluación
 5. Validación de mayoría de edad o titularidad
 6. Confirmación de condiciones técnicas del servicio
 7. Tiempo estimado de entrega del chip
-8. Evaluar que el asesor no mencione las palabras "probar gratis" o "cancelar", si menciona alguna de esas palabras, no cumple este criterio y señalalo
+8. Evaluar que el asesor no mencione las palabras "probar gratis" o "cancelar", si menciona alguna de esas palabras, no cumple este criterio y señalalo. Detecta solo si fue el asesor quien menciono estas palabras ya que si fue el cliente, el rubro no debe ser penalizado.
 
 Tu respuesta debe tener este formato:
 
