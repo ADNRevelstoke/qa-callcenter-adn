@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html>
 <head>
@@ -32,7 +33,6 @@
     .transcripcion p {
       margin: 2px 0;
       line-height: 1.2;
-      cursor: pointer;
     }
     .button-row {
       margin-top: 30px;
@@ -49,33 +49,42 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    input[type=file], select {
+    input[type=file] {
       padding: 10px;
       background: white;
       color: black;
       border-radius: 4px;
-      margin-bottom: 10px;
     }
-    #loaderModal {
+    #loader {
+      display: none;
+      font-size: 18px;
+      margin-top: 20px;
+      color: #00b0f0;
+    }
+    #videoModal {
       display: none;
       position: fixed;
-      z-index: 999;
-      padding-top: 100px;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.8);
+      z-index: 9999;
+      left: 0; top: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
     }
-    #loaderModalContent {
-      margin: auto;
-      display: block;
+    #videoModal video {
       max-width: 80%;
+      max-height: 80%;
     }
   </style>
   <script>
     function showLoader() {
-      document.getElementById('loaderModal').style.display = 'block';
-      var video = document.getElementById('loaderVideo');
-      video.play();
+      document.getElementById('videoModal').style.display = 'flex';
+      setTimeout(() => {
+        document.getElementById('loaderForm').submit();
+      }, 1000);
+    }
+
+    function closeModal() {
+      document.getElementById('videoModal').style.display = 'none';
     }
   </script>
 </head>
@@ -83,32 +92,17 @@
   <header>
     <img src="{{ url_for('static', filename='header.png') }}" style="max-width: 100%; height: auto;">
   </header>
-
   <div class="container">
     {% if not resultado %}
-      <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
-        <input type="file" name="audio" accept=".wav" required><br>
-        {% if session.get('rol') == 'evaluador' %}
-          <select name="evaluado" required>
-            <option value="">Selecciona ejecutivo a evaluar</option>
-            {% for ejecutivo in ejecutivos %}
-              <option value="{{ ejecutivo }}">{{ ejecutivo }}</option>
-            {% endfor %}
-          </select><br>
-        {% endif %}
+      <form id="loaderForm" method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
+        <input type="file" name="audio" accept=".wav" required>
         <button type="submit">Evaluar llamada</button>
       </form>
-
-      <div id="loaderModal">
-        <video id="loaderVideo" src="{{ url_for('static', filename='loader.mp4') }}" autoplay muted></video>
-      </div>
-
     {% else %}
       <div class="resultado">
         <h2>Resultado:</h2>
         <pre>{{ resultado }}</pre>
       </div>
-
       <div class="transcripcion">
         <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}"></audio>
         {% for s in segments %}
@@ -123,19 +117,19 @@
       <form method="GET" action="{{ url_for('index') }}">
         <button type="submit">Evaluar otra llamada</button>
       </form>
-      {% if session.get('rol') == 'evaluador' %}
       <form method="GET" action="{{ url_for('historial') }}">
         <button type="submit">Ver historial</button>
       </form>
-      {% else %}
-      <form method="GET" action="{{ url_for('dashboard') }}">
-        <button type="submit">Mi dashboard</button>
-      </form>
-      {% endif %}
       <form method="GET" action="{{ url_for('logout') }}">
         <button type="submit">Cerrar sesión</button>
       </form>
     </div>
+  </div>
+
+  <div id="videoModal" onclick="closeModal()">
+    <video autoplay muted>
+      <source src="{{ url_for('static', filename='loader.mp4') }}" type="video/mp4">
+    </video>
   </div>
 </body>
 </html>
