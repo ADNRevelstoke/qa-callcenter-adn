@@ -1,10 +1,11 @@
+
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
 import re
+import json
 from dotenv import load_dotenv
 from datetime import datetime
-import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -12,7 +13,7 @@ app = Flask(__name__)
 app.secret_key = "supersecreto"
 load_dotenv()
 
-openai.api_key = os.environ.get("OPENAI_API_KEY", "MISSING_KEY")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def cargar_usuarios_desde_sheets():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -21,23 +22,16 @@ def cargar_usuarios_desde_sheets():
     client = gspread.authorize(creds)
     sheet = client.open_by_key(os.environ["SHEET_ID"]).worksheet("Lista")
     data = sheet.get_all_records()
-    usuarios = {}
-    for row in data:
-        usuarios[row["NombreUsuario"]] = {
-            "nombre": row["NombreCompleto"],
-            "rol": row["Rol"],
-            "password": row["Password"]
-        }
-    return usuarios
+    return {row["NombreUsuario"]: {"password": row["Password"], "nombre": row["NombreCompleto"], "rol": row["Rol"]} for row in data}
 
 USUARIOS = cargar_usuarios_desde_sheets()
-
 HISTORIAL_FILE = "historial.json"
 
-def guardar_en_historial(usuario, score, resumen):
+def guardar_en_historial(usuario, ejecutivo, score, resumen):
     fila = {
         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "usuario": usuario,
+        "evaluador": usuario,
+        "evaluado": ejecutivo,
         "score": score,
         "resumen": resumen.strip()
     }
@@ -54,24 +48,25 @@ def guardar_en_historial(usuario, score, resumen):
 def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
-    if session.get("rol") != "evaluador":
+    if USUARIOS[session["usuario"]]["rol"] == "ejecutivo":
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
+        ejecutivo = request.form.get("evaluado")
+        if not ejecutivo:
+            return "Debe seleccionar al ejecutivo evaluado", 400
+
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"
         audio_file.save(audio_path)
 
         transcript_data = openai.Audio.transcribe(
-            "whisper-1",
-            open(audio_path, "rb"),
-            response_format="verbose_json"
+            "whisper-1", open(audio_path, "rb"), response_format="verbose_json"
         )
-
         segments = transcript_data["segments"]
         full_text = " ".join([s["text"] for s in segments])
 
-        prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
+        prompt = f'''Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
 No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
 Por cada uno de los siguientes criterios, responde únicamente con una de estas opciones:
 • ✅ Cumple
@@ -96,11 +91,11 @@ Tu respuesta debe tener este formato:
 
 Observaciones:
 - [TÍTULO DEL RUBRO]: Explica por qué no cumple o cumple parcialmente.
-- (Repite este punto para cada criterio que no haya cumplido completamente)
+...
 
 Transcripción real:
 {full_text}
-"""
+'''
 
         response = openai.ChatCompletion.create(
             model="gpt-4",
@@ -114,10 +109,26 @@ Transcripción real:
         score_match = re.search(r"(\d{1,3})%", resultado)
         score = score_match.group(1) + "%" if score_match else "N/A"
 
-        guardar_en_historial(session["usuario"], score, resultado)
-        return render_template("index.html", segments=segments, resultado=resultado)
+        guardar_en_historial(session["usuario"], ejecutivo, score, resultado)
+        return render_template("index.html", segments=segments, resultado=resultado, usuarios=get_ejecutivos())
 
-    return render_template("index.html", segments=None, resultado=None)
+    return render_template("index.html", segments=None, resultado=None, usuarios=get_ejecutivos())
+
+def get_ejecutivos():
+    return [v["nombre"] for v in USUARIOS.values() if v["rol"] == "ejecutivo"]
+
+@app.route("/dashboard")
+def dashboard():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+    nombre = USUARIOS[session["usuario"]]["nombre"]
+    try:
+        with open(HISTORIAL_FILE, "r") as f:
+            historial = json.load(f)
+    except FileNotFoundError:
+        historial = []
+    personales = [h for h in historial if h["evaluado"] == nombre]
+    return render_template("dashboard.html", historial=personales, nombre=nombre)
 
 @app.route("/historial")
 def historial():
@@ -127,16 +138,6 @@ def historial():
         historial = json.load(f)
     return render_template("historial.html", historial=historial)
 
-@app.route("/dashboard")
-def dashboard():
-    if "usuario" not in session or session.get("rol") != "ejecutivo":
-        return redirect(url_for("login"))
-    with open(HISTORIAL_FILE, "r") as f:
-        historial = json.load(f)
-    usuario = session["usuario"]
-    filtro = [h for h in historial if h["usuario"] == usuario]
-    return render_template("dashboard.html", historial=filtro, usuario=usuario)
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -145,18 +146,14 @@ def login():
         clave = request.form["password"]
         if usuario in USUARIOS and USUARIOS[usuario]["password"] == clave:
             session["usuario"] = usuario
-            session["rol"] = USUARIOS[usuario]["rol"]
-            if session["rol"] == "evaluador":
-                return redirect(url_for("index"))
-            else:
-                return redirect(url_for("dashboard"))
+            return redirect(url_for("index"))
         else:
             error = "Usuario o contraseña incorrectos"
     return render_template("login.html", error=error)
 
 @app.route("/logout")
 def logout():
-    session.clear()
+    session.pop("usuario", None)
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
