@@ -45,27 +45,20 @@ def index():
 
     if request.method == "POST":
         print("🔁 POST recibido")
-        if "audio" not in request.files:
-            print("❌ No se encontró 'audio' en request.files")
-            return "No se envió archivo de audio.", 400
-
         audio_file = request.files["audio"]
-        if audio_file.filename == "":
-            print("⚠️ Archivo sin nombre recibido")
-            return "Nombre de archivo vacío.", 400
-
-        print(f"📥 Audio recibido: {audio_file.filename}")
         audio_path = "static/audio.wav"
         audio_file.save(audio_path)
+        print("📥 Audio recibido:", audio_file.filename)
 
-        transcript_data = openai.Audio.transcribe(
-            "whisper-1",
-            open(audio_path, "rb"),
-            response_format="verbose_json"
-        )
+        with open(audio_path, "rb") as f:
+            transcript_data = openai.audio.transcriptions.create(
+                model="whisper-1",
+                file=f,
+                response_format="verbose_json"
+            )
 
-        segments = transcript_data["segments"]
-        full_text = " ".join([s["text"] for s in segments])
+        segments = transcript_data.segments
+        full_text = " ".join([s.text for s in segments])
 
         prompt = f"""Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
 No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
@@ -100,20 +93,20 @@ Transcripción real:
 {full_text}
 """
 
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "Eres un auditor experto en validación de ventas de telefonía móvil. Solo debes evaluar la parte de la llamada anterior a la transferencia a validación o calidad, ignorando todo lo posterior."},
+                {"role": "system", "content": "Eres un auditor automatizado de calidad en llamadas. Solo debes evaluar la parte de la llamada anterior a la transferencia a validación o calidad, ignorando todo lo posterior."},
                 {"role": "user", "content": prompt}
             ]
         )
 
-        resultado = response.choices[0].message["content"]
+        resultado = response.choices[0].message.content
         score_match = re.search(r"(\d{1,3})%", resultado)
         score = score_match.group(1) + "%" if score_match else "N/A"
 
         guardar_en_historial(session["usuario"], score, resultado)
-        return render_template("index.html", segments=segments, resultado=resultado)
+        return render_template("index.html", segments=segments, resultado=resultado, transcript=full_text)
 
     return render_template("index.html", segments=None, resultado=None)
 
@@ -144,4 +137,4 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
