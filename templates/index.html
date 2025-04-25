@@ -83,12 +83,12 @@
 
       <div class="transcripcion">
         <h2>Transcripción:</h2>
+        <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}" style="margin-bottom: 20px;"></audio>
         {% for s in segments %}
-          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }};document.getElementById('audio').play();">
+          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }};document.getElementById('audio').play();" style="cursor:pointer;">
             {{ s['text'] }}
           </p>
         {% endfor %}
-        <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}"></audio>
       </div>
 
       <div class="button-row">
@@ -106,4 +106,3 @@
   </div>
 </body>
 </html>
-
