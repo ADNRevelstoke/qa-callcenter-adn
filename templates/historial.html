@@ -1,0 +1,54 @@
+
+<!doctype html>
+<html>
+<head>
+  <title>Historial de Evaluaciones</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #031b4e;
+      color: white;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      color: #00b0f0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #0f2a60;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #021234;
+    }
+    tr:nth-child(even) {
+      background-color: #0f2a60;
+    }
+  </style>
+</head>
+<body>
+  <h2>Historial de Evaluaciones</h2>
+  <table>
+    <tr>
+      <th>Fecha</th>
+      <th>Usuario</th>
+      <th>Score</th>
+      <th>Resumen</th>
+    </tr>
+    {% for entrada in historial %}
+    <tr>
+      <td>{{ entrada.fecha }}</td>
+      <td>{{ entrada.usuario }}</td>
+      <td>{{ entrada.score }}</td>
+      <td><pre>{{ entrada.resumen }}</pre></td>
+    </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
