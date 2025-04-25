@@ -80,11 +80,28 @@
       max-width: 100%;
       border-radius: 10px;
     }
+    /* 🔥 Nuevo estilo para resaltar incumplimientos */
+    .incumplimiento {
+      background-color: yellow;
+      color: black;
+      font-weight: bold;
+      padding: 2px;
+      border-radius: 3px;
+    }
   </style>
   <script>
     function showLoader() {
       document.getElementById('loaderModal').style.display = 'block';
       document.getElementById('loaderVideo').play();
+    }
+
+    window.onload = function() {
+      var resultado = document.getElementById('resultado');
+      if (resultado) {
+        var texto = resultado.innerHTML;
+        var resaltado = texto.replace(/❌ No cumple/g, '<span class="incumplimiento">❌ No cumple</span>');
+        resultado.innerHTML = resaltado;
+      }
     }
   </script>
 </head>
@@ -116,7 +133,7 @@
     {% else %}
       <div class="resultado">
         <h2>Resultado:</h2>
-        <pre>{{ resultado }}</pre>
+        <pre id="resultado">{{ resultado }}</pre>
       </div>
 
       <div class="transcripcion">
