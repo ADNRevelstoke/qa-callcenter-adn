@@ -64,6 +64,9 @@ def index():
             "whisper-1", open(audio_path, "rb"), response_format="verbose_json"
         )
         segments = transcript_data["segments"]
+        # Limpieza de saltos de línea innecesarios
+        for s in segments:
+        s["text"] = s["text"].replace("\n", " ").strip()
         full_text = " ".join([s["text"] for s in segments])
 
         prompt = f'''Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
