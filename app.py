@@ -21,8 +21,14 @@ def cargar_usuarios_desde_sheets():
     creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
     client = gspread.authorize(creds)
     sheet = client.open_by_key(os.environ["SHEET_ID"]).worksheet("Lista")
-    data = sheet.get_all_records()
-    return {row["NombreUsuario"]: {"password": row["Password"], "nombre": row["NombreCompleto"], "rol": row["Rol"]} for row in data}
+    data = sheet.get_all_records(expected_headers=["NombreUsuario", "NombreCompleto", "Rol", "Password"])
+    return {
+        row["NombreUsuario"]: {
+            "password": row["Password"],
+            "nombre": row["NombreCompleto"],
+            "rol": row["Rol"]
+        } for row in data
+    }
 
 USUARIOS = cargar_usuarios_desde_sheets()
 HISTORIAL_FILE = "historial.json"
