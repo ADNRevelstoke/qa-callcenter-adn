@@ -54,6 +54,11 @@ def guardar_en_historial(usuario, ejecutivo, score, resumen):
 def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
+
+    # Recarga dinámica de usuarios para reflejar cambios en el Google Sheets
+    global USUARIOS
+    USUARIOS = cargar_usuarios_desde_sheets()
+
     if USUARIOS[session["usuario"]]["rol"] == "ejecutivo":
         return redirect(url_for("dashboard"))
 
@@ -70,6 +75,7 @@ def index():
             "whisper-1", open(audio_path, "rb"), response_format="verbose_json"
         )
         segments = transcript_data["segments"]
+
         # Limpieza de saltos de línea innecesarios
         for s in segments:
             s["text"] = s["text"].replace("\n", " ").strip()
