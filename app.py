@@ -78,43 +78,71 @@ def index():
 
         full_text = " ".join([s["text"] for s in segments])
 
-        prompt = f'''Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
-No infieras información que no esté presente en la transcripción. Solo responde en función del contenido textual que aparece.
-Por cada uno de los siguientes criterios, responde únicamente con una de estas opciones:
-• ✅ Cumple
-• ⚠️ Cumple Parcialmente
-• ❌ No cumple
+        prompt = f'''Asume el rol de un analista de calidad y evalúa la siguiente transcripción de una llamada entre un asesor y un cliente. 
 
-Criterios de Evaluación
-1. Permanencia mínima de 3 meses
-  o Evalúa si el asesor menciona que el servicio contratado requiere una permanencia mínima de tres meses.
-  o Debe indicarlo explícitamente, con sinónimos como: mínimo, al menos, obligatorio mantenerlo tres meses, etc.
-2. Mención clara del costo del paquete ($150, $280 o $330)
-  o El asesor debe indicar el precio del paquete de forma clara. Puede omitir la palabra “pesos”, pero el monto debe mencionarse de forma inequívoca.
-  o Evalúa también si explica correctamente las características correspondientes a cada plan:
-    - $150: 7 GB de navegación al mes, redes sociales ilimitadas, llamadas y mensajes ilimitados.
-    - $280: Todo ilimitado. Si el cliente pregunta si puede compartir internet, el asesor debe aclarar que no. Si el cliente no pregunta, este punto no es obligatorio.
-    - $330: Todo ilimitado y sí se puede compartir internet. Solo debe mencionarse si se está comparando con el de $280.
-  o Si el cliente pregunta qué redes sociales están incluidas, el asesor debe decir exactamente estas 7: Facebook, Instagram, X (o Twitter), WhatsApp, Messenger, Snapchat y Telegram.
-3. Proceso de activación del chip
-  o Si el cliente solicita número nuevo, el asesor debe explicar que solo necesita insertar (o sinónimos: ingresar, colocar, introducir, meter) el chip en el teléfono.
-  o Si el cliente desea conservar su número (portabilidad), el asesor debe indicar que debe primero llamar al 3396901234 opción 2 antes de insertar el chip.
-  o Si el cliente dice que no puede anotar, el asesor debe mencionar que esta información está disponible en la página de Megamóvil.
-  o El asesor debe mencionar que en esa llamada el cliente debe decir que quiere hacer la portabilidad y seguir instrucciones del ejecutivo.
-4. Plazo para realizar portabilidad: 7 días naturales
-5. Validación de mayoría de edad o titularidad
-6. Confirmación de condiciones técnicas del servicio
-7. Tiempo estimado de entrega del chip
-8. Evaluar que el asesor no mencione las palabras "probar gratis" o "cancelar", si menciona alguna de esas palabras, no cumple este criterio y señalalo. Detecta solo si fue el asesor quien menciono estas palabras ya que si fue el cliente, el rubro no debe ser penalizado.
+Tu tarea consiste en calificar con un ✅ si el asesor cumple correctamente con cada punto y con una ❌ si no lo menciona. Debes analizar únicamente la parte de la conversación **previa a la frase**: "del departamento de calidad". Una vez que dicha frase aparece, debes detener la evaluación y no considerar nada de lo que ocurra después.
+
+Evalúa los siguientes criterios:
+
+1. **Red y cobertura**
+   - El asesor debe mencionar que el servicio cuenta con cobertura nacional y/o red 4.5G LTE.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+   - Únicamente si el cliente pregunta directamente por cobertura, señal o red, el asesor puede responder que existe un margen de error. Si lo menciona sin que se le pregunte, también es válido y debe calificarse como ✅.
+
+2. **Llamadas, mensajes, redes sociales y 7 GB**
+   - Se debe mencionar en algún momento que el paquete incluye llamadas, mensajes, redes sociales ilimitadas y 7 GB de navegación.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+3. **Doble de gigabytes por portabilidad**
+   - El asesor debe decir que si el cliente conserva su número (portabilidad), obtiene el doble de gigabytes durante los primeros 12 meses.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+4. **Costo del paquete**
+   - Se debe mencionar que el costo del paquete es de $150, $280 o $330.
+   - Si menciona alguno de estos precios, califica como ✅.
+   - Si no menciona ningún precio, califica como ❌.
+
+5. **Permanencia de 3 meses**
+   - Debe decirse que el servicio tiene una permanencia mínima de 3 meses.
+   - Si lo menciona o usa sinónimos como "obligatorio 3 meses", califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+6. **Tiempo de entrega: 7 días hábiles**
+   - El asesor debe indicar que el chip se entrega en 7 días hábiles.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+7. **Número para portabilidad**
+   - El asesor debe mencionar el número 3396901234 como parte del proceso de portabilidad.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+8. **Plazo de activación: 7 días naturales**
+   - Debe indicarse que hay 7 días o 7 días naturales para realizar la portabilidad o marcar.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+9. **10 Mbps adicionales**
+   - El asesor debe mencionar que el cliente recibe 10 megabits o 10 megas adicionales.
+   - Si lo menciona, califica como ✅.
+   - Si no lo menciona, califica como ❌.
+
+10. **Recargas**
+   - Se debe preguntar al cliente si actualmente usa recargas.
+   - Si el cliente responde que sí, y el asesor reacciona de forma adecuada (positiva), califica como ✅.
+   - Si no se pregunta o no se menciona el tema, califica como ❌.
 
 Tu respuesta debe tener este formato:
 
-1. [TÍTULO DEL RUBRO]: ✅/⚠️/❌
-...
-8. [TÍTULO DEL RUBRO]: ✅/⚠️/❌
+1. [Nombre del criterio]: ✅/❌  
+2. [Nombre del criterio]: ✅/❌  
+...  
+10. [Nombre del criterio]: ✅/❌
 
-Observaciones:
-- [TÍTULO DEL RUBRO]: Explica por qué no cumple o cumple parcialmente.
+Después, proporciona una sección de **observaciones** explicando brevemente las razones de los ❌ en caso de que existan.
 ...
 
 Transcripción real:
