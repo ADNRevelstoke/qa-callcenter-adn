@@ -62,9 +62,7 @@ def index():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        ejecutivo = request.form.get("evaluado")
-        if not ejecutivo:
-            return "Debe seleccionar al ejecutivo evaluado", 400
+        ejecutivo = "SIN NOMBRE"
 
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"

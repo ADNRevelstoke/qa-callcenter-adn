@@ -121,14 +121,6 @@
   <div class="container">
     {% if not resultado %}
       <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
-        {% if usuarios %}
-          <label for="evaluado">Selecciona al ejecutivo evaluado:</label><br>
-          <select name="evaluado" required>
-            {% for nombre in usuarios %}
-              <option value="{{ nombre }}">{{ nombre }}</option>
-            {% endfor %}
-          </select><br><br>
-        {% endif %}
         <input type="file" name="audio" accept=".wav" required><br><br>
         <button type="submit">Evaluar llamada</button>
       </form>
