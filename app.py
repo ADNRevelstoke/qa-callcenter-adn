@@ -50,22 +50,23 @@ def guardar_en_historial(usuario, ejecutivo, score, resumen):
     with open(HISTORIAL_FILE, "w") as f:
         json.dump(historial, f, indent=2)
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if "usuario" not in session:
-        return redirect(url_for("login"))
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
 
-    # Verifica si el usuario está en la sesión y recarga la lista de usuarios desde Google Sheets
+    # Recarga dinámica de usuarios en cada intento de login
     global USUARIOS
     USUARIOS = cargar_usuarios_desde_sheets()
 
-    if USUARIOS[session["usuario"]]["rol"] == "ejecutivo":
-        return redirect(url_for("dashboard"))
-
     if request.method == "POST":
-        ejecutivo = request.form.get("evaluado")
-        if not ejecutivo:
-            return "Debe seleccionar al ejecutivo evaluado", 400
+        usuario = request.form["username"]
+        clave = request.form["password"]
+        if usuario in USUARIOS and USUARIOS[usuario]["password"] == clave:
+            session["usuario"] = usuario
+            return redirect(url_for("index"))
+        else:
+            error = "Usuario o contraseña incorrectos"
+    return render_template("login.html", error=error)
 
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"
