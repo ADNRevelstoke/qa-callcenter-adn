@@ -60,7 +60,6 @@
       margin-top: 10px;
     }
 
-    /* Loader modal styles */
     #loaderModal {
       display: none;
       position: fixed;
@@ -98,7 +97,6 @@
     </video>
   </header>
 
-  <!-- Loader modal -->
   <div id="loaderModal">
     <div id="loaderModalContent">
       <video id="loaderVideo" src="{{ url_for('static', filename='loader.mp4') }}" autoplay loop muted></video>
@@ -114,7 +112,17 @@
     {% else %}
       <div class="resultado">
         <h2>Resultado:</h2>
-        <pre>{{ resultado }}</pre>
+        <pre>
+{% set partes = resultado.split("Observaciones:") %}
+{{ partes[0].strip() }}
+
+{% if partes|length > 1 %}
+<strong style="color:#00b0f0;">Observaciones:</strong>
+<div style="background-color: #ffffffaa; padding: 15px; border-left: 5px solid #00b0f0; margin-top: 10px; color:#031b4e; white-space: pre-wrap;">
+  {{ partes[1].strip() }}
+</div>
+{% endif %}
+        </pre>
       </div>
 
       <div class="transcripcion">
