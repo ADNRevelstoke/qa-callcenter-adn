@@ -55,7 +55,7 @@ def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    # Recarga dinámica de usuarios para reflejar cambios en el Google Sheets
+    # Verifica si el usuario está en la sesión y recarga la lista de usuarios desde Google Sheets
     global USUARIOS
     USUARIOS = cargar_usuarios_desde_sheets()
 
@@ -79,7 +79,7 @@ def index():
         # Limpieza de saltos de línea innecesarios
         for s in segments:
             s["text"] = s["text"].replace("\n", " ").strip()
-            
+
         full_text = " ".join([s["text"] for s in segments])
 
         prompt = f'''Eres un auditor experto en validación de ventas de telefonía móvil. Vas a evaluar la transcripción de una llamada entre un asesor y un cliente. Tu análisis debe centrarse únicamente en la primera parte de la conversación, hasta el momento en que el asesor menciona que la llamada será transferida al área de validación o calidad. Ignora todo lo que ocurra después de esa transferencia.
