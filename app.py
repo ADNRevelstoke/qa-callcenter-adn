@@ -80,7 +80,7 @@ def index():
 
         prompt = f'''Asume el rol de un analista de calidad y evalúa la siguiente transcripción de una llamada entre un asesor y un cliente. 
 
-Tu tarea consiste en calificar con un ✅ si el asesor cumple correctamente con cada punto y con una ❌ si no lo menciona. Debes analizar únicamente la parte de la conversación **previa a la frase**: "del departamento de calidad". Una vez que dicha frase aparece, debes detener la evaluación y no considerar nada de lo que ocurra después.
+Tu tarea consiste en calificar con un ✅ si el asesor cumple correctamente con cada punto y con una ❌ si no lo menciona. Debes analizar únicamente la parte de la conversación **previa a la frase**: "del departamento de calidad", o detectando que el asesor esta transfiriendo la llamada a un validador, porque esa etapa de la llamada no debe ser calificada. Una vez que dicha frase o escenario de transferencia a validador, equipo de validacion, equipo de calidad, etc,  aparece, debes detener la evaluación y no considerar nada de lo que ocurra después.
 
 Evalúa los siguientes criterios:
 
@@ -91,7 +91,7 @@ Evalúa los siguientes criterios:
    - Únicamente si el cliente pregunta directamente por cobertura, señal o red, el asesor puede responder que existe un margen de error. Si lo menciona sin que se le pregunte, también es válido y debe calificarse como ✅.
 
 2. **Llamadas, mensajes, redes sociales y 7 GB**
-   - Se debe mencionar en algún momento que el paquete incluye llamadas, mensajes, redes sociales ilimitadas y 7 GB de navegación.
+   - Se debe mencionar en algún momento que el paquete incluye llamadas, mensajes, redes sociales ilimitadas y 7 GB de navegación. Es valido si el asesor menciona palabras articuladas para referirse a las redes sociales, como por ejemplo "X" "EX" o "Twitter" es lo mismo y es válido. 
    - Si lo menciona, califica como ✅.
    - Si no lo menciona, califica como ❌.
 
@@ -116,7 +116,7 @@ Evalúa los siguientes criterios:
    - Si no lo menciona, califica como ❌.
 
 7. **Número para portabilidad**
-   - El asesor debe mencionar el número 3396901234 como parte del proceso de portabilidad.
+   - El asesor debe mencionar el número 3396901234 como parte del proceso de portabilidad. Por favor considera que el asesor puede mencionar el numero de manera continua o con equivalencias como 33 96 90 12 34, o numero por numero y cualquiera de esos escenarios es valido. 
    - Si lo menciona, califica como ✅.
    - Si no lo menciona, califica como ❌.
 
@@ -135,12 +135,18 @@ Evalúa los siguientes criterios:
    - Si el cliente responde que sí, y el asesor reacciona de forma adecuada (positiva), califica como ✅.
    - Si no se pregunta o no se menciona el tema, califica como ❌.
 
+11. **Palabras Prohibidas*
+   - El asesor tiene prohibido mencionar explicitamente las palabras: "probar", "cancelar" y "gratis" por lo que mencionarlas en cualquier punto de la llamada, se debe penalizar negativamente el rubro.
+   - Si la o las menciona cualquiera de esas palabras, califica como ❌.
+   - Si no las menciona, califica como ✅.
+
+
 Tu respuesta debe tener este formato:
 
 1. [Nombre del criterio]: ✅/❌  
 2. [Nombre del criterio]: ✅/❌  
 ...  
-10. [Nombre del criterio]: ✅/❌
+11. [Nombre del criterio]: ✅/❌
 
 Después, proporciona una sección de **observaciones** explicando brevemente las razones de los ❌ en caso de que existan.
 ...
