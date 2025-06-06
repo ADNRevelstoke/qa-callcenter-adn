@@ -90,8 +90,8 @@ Evalúa los siguientes criterios:
    - Si no lo menciona, califica como ❌.
    - Únicamente si el cliente pregunta directamente por cobertura, señal o red, el asesor puede responder que existe un margen de error. Si lo menciona sin que se le pregunte, también es válido y debe calificarse como ✅.
 
-2. **Llamadas, mensajes, redes sociales y 7 GB**
-   - Se debe mencionar en algún momento que el paquete incluye llamadas, mensajes, redes sociales ilimitadas y 7 GB de navegación. Es valido si el asesor menciona palabras articuladas para referirse a las redes sociales, como por ejemplo "X" "EX" o "Twitter" es lo mismo y es válido. 
+2. **Llamadas, mensajes, redes sociales y 3 GB**
+   - Se debe mencionar en algún momento que el paquete incluye llamadas, mensajes, redes sociales ilimitadas y 3 GB de navegación. Es valido si el asesor menciona palabras articuladas para referirse a las redes sociales, como por ejemplo "X" "EX" o "Twitter" es lo mismo y es válido. 
    - Si lo menciona, califica como ✅.
    - Si no lo menciona, califica como ❌.
 
@@ -101,7 +101,7 @@ Evalúa los siguientes criterios:
    - Si no lo menciona, califica como ❌.
 
 4. **Costo del paquete**
-   - Se debe mencionar que el costo del paquete es de $150, $280 o $330.
+   - Se debe mencionar que el costo del paquete es de $100, $200 o $300.
    - Si menciona alguno de estos precios, califica como ✅.
    - Si no menciona ningún precio, califica como ❌.
 
@@ -126,7 +126,7 @@ Evalúa los siguientes criterios:
    - Si no lo menciona, califica como ❌.
 
 9. **10 Mbps adicionales**
-   - El asesor debe mencionar que el cliente recibe 10 megabits o 10 megas adicionales.
+   - El asesor debe mencionar que el cliente recibe 10 megabits o 10 megas adicionales a su servicio de internet en casa por conceptos que pueden ser portabilidad y/o contratación del servicio, osea en total pueden sumar 20 megas, con que el asesor mencione uno u otro, es un rubro positivo, si no menciona ninguno u omite alguno, no lo penalices solo observalo en las notas.
    - Si lo menciona, califica como ✅.
    - Si no lo menciona, califica como ❌.
 
