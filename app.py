@@ -1,4 +1,4 @@
-
+    
 from flask import Flask, request, render_template, redirect, url_for, session
 import openai
 import os
@@ -8,10 +8,17 @@ from dotenv import load_dotenv
 from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import firebase_admin
+from firebase_admin import credentials, firestore, auth
 
-app = Flask(__name__)
-app.secret_key = "supersecreto"
-load_dotenv()
+# Ruta al archivo de configuración
+cred = credentials.Certificate("downloads/evaluador-web-adn.txt")
+firebase_admin.initialize_app(cred)
+
+db = firestore.client()
+
+cred = credentials.Certificate("secrets/firebase_key.json")  # ajusta la ruta si es necesario
+firebase_admin.initialize_app(cred)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -58,8 +65,9 @@ def index():
     global USUARIOS
     USUARIOS = cargar_usuarios_desde_sheets()
 
-    if USUARIOS[session["usuario"]]["rol"] == "ejecutivo":
-        return redirect(url_for("dashboard"))
+    # Eliminamos redirección por rol, todos van a index
+    # if USUARIOS[session["usuario"]]["rol"] == "ejecutivo":
+    #     return redirect(url_for("dashboard"))
 
     if request.method == "POST":
         ejecutivo = "SIN NOMBRE"
@@ -196,17 +204,55 @@ def historial():
         historial = json.load(f)
     return render_template("historial.html", historial=historial)
 
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
+
+# Inicializa Firebase solo una vez
+if not firebase_admin._apps:
+    cred = credentials.Certificate("firebase_credentials.json")  # O usa os.environ si prefieres
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
+
     if request.method == "POST":
         usuario = request.form["username"]
         clave = request.form["password"]
-        if usuario in USUARIOS and USUARIOS[usuario]["password"] == clave:
-            session["usuario"] = usuario
-            return redirect(url_for("index"))
-        else:
-            error = "Usuario o contraseña incorrectos"
+
+        try:
+            # Autenticación con Firebase Auth
+            user = auth.get_user_by_email(usuario)
+
+            # Verificación manual de contraseña
+            # (Firebase Admin SDK no permite verificar contraseñas directamente, se requiere REST API)
+            import requests
+            firebase_api_key = os.environ.get("FIREBASE_API_KEY")  # Asegúrate de tenerla configurada
+            payload = {
+                "email": usuario,
+                "password": clave,
+                "returnSecureToken": True
+            }
+            r = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={firebase_api_key}", json=payload)
+            if r.status_code != 200:
+                error = "Usuario o contraseña incorrectos"
+                return render_template("login.html", error=error)
+
+            # Obtener rol desde Firestore
+            doc_ref = db.collection("usuarios").document(usuario)
+            doc = doc_ref.get()
+            if doc.exists:
+                rol = doc.to_dict().get("rol", "")
+                session["usuario"] = usuario
+                session["rol"] = rol
+                return redirect(url_for("index"))
+            else:
+                error = "Usuario sin rol asignado en base de datos"
+
+        except Exception as e:
+            error = "Error de autenticación: " + str(e)
+
     return render_template("login.html", error=error)
 
 @app.route("/logout")
