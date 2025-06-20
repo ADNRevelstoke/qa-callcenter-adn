@@ -306,6 +306,10 @@ def reset_password():
             mensaje = "⚠️ Error al procesar la solicitud: " + str(e)
     return render_template("reset_password.html", mensaje=mensaje)
 
+@app.route("/logout")
+def logout():
+    session.pop("usuario", None)
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     print("🚀 Aplicación Flask iniciando...")
