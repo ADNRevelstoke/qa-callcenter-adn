@@ -1,151 +1,95 @@
 <!doctype html>
 <html>
 <head>
-  <title>Evaluador ADN - Llamadas</title>
+  <title>Evaluación de llamadas</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: white;
-      color: #031b4e;
+      background-color: #f2f2f2;
       margin: 0;
       padding: 0;
     }
-    header {
-      background-color: white;
-      padding: 10px;
-      text-align: center;
-    }
     .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: white;
       padding: 30px;
-      max-width: 1000px;
-      margin: auto;
-    }
-    h2 { color: #00b0f0; }
-    .resultado, .transcripcion {
-      background-color: #f2f2f2;
-      padding: 20px;
-      margin-top: 30px;
       border-radius: 8px;
-      white-space: pre-wrap;
-      word-break: break-word;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
-    .transcripcion p {
-      margin: 2px 0;
-      line-height: 1.2;
-      cursor: pointer;
+    h1 {
+      text-align: center;
+      color: #333;
     }
-    .transcripcion p:hover {
-      background-color: #007bff33;
+    form {
+      margin-bottom: 20px;
     }
-    .button-row {
-      margin-top: 30px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+    input[type="file"], select {
+      display: block;
+      margin: 15px auto;
     }
     button {
+      display: block;
+      margin: 15px auto;
       padding: 10px 20px;
-      font-size: 16px;
       background-color: #00b0f0;
       color: #031b4e;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
-    input[type=file] {
-      padding: 10px;
-      background: white;
-      color: black;
-      border-radius: 4px;
+    .resultado {
+      white-space: pre-wrap;
+      background: #f8f8f8;
+      border-left: 4px solid #00b0f0;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    audio {
+      width: 100%;
       margin-top: 10px;
     }
-
-    #loaderModal {
-      display: none;
-      position: fixed;
-      z-index: 9999;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.7);
-    }
-    #loaderModalContent {
-      position: relative;
-      margin: 10% auto;
-      width: 50%;
-      text-align: center;
-    }
-    #loaderVideo {
-      max-width: 100%;
-      border-radius: 10px;
+    .segmento {
+      margin-top: 10px;
+      padding: 10px;
+      background: #eef;
+      border-radius: 4px;
     }
   </style>
-  <script>
-    function showLoader() {
-      document.getElementById('loaderModal').style.display = 'block';
-      document.getElementById('loaderVideo').play();
-    }
-  </script>
 </head>
 <body>
-  <header>
-    <video autoplay muted loop playsinline style="width: 100%; max-height: 300px; object-fit: cover;">
-      <source src="{{ url_for('static', filename='banner.mp4') }}" type="video/mp4">
-      Tu navegador no soporta videos.
-    </video>
-  </header>
-
-  <div id="loaderModal">
-    <div id="loaderModalContent">
-      <video id="loaderVideo" src="{{ url_for('static', filename='loader.mp4') }}" autoplay loop muted></video>
-    </div>
-  </div>
-
   <div class="container">
-    {% if not resultado %}
-      <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
-        <input type="file" name="audio" accept=".wav" required><br><br>
-        <button type="submit">Evaluar llamada</button>
-      </form>
-    {% else %}
-      <div class="resultado">
-        <h2>Resultado:</h2>
-        <pre>
-{% set partes = resultado.split("Observaciones:") %}
-{{ partes[0].strip() }}
-
-{% if partes|length > 1 %}
-<strong style="color:#00b0f0;">Observaciones:</strong>
-<div style="background-color: #ffffffaa; padding: 15px; border-left: 5px solid #00b0f0; margin-top: 10px; color:#031b4e; white-space: pre-wrap;">
-  {{ partes[1].strip() }}
-</div>
-{% endif %}
-        </pre>
-      </div>
-
-      <div class="transcripcion">
-        <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}"></audio><br><br>
-        {% for s in segments %}
-          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }}; document.getElementById('audio').play();">
-            {{ s['text'] }}
-          </p>
+    <h1>Evaluación de Llamadas</h1>
+    <form method="post" enctype="multipart/form-data">
+      <label for="ejecutivo">Selecciona al asesor evaluado:</label>
+      <select name="ejecutivo" required>
+        {% for nombre in usuarios %}
+          <option value="{{ nombre }}">{{ nombre }}</option>
         {% endfor %}
+      </select>
+      <input type="file" name="audio" accept="audio/*" required>
+      <button type="submit">Evaluar</button>
+    </form>
+
+    {% if resultado %}
+      <div class="resultado">
+        <strong>Resultado:</strong>
+        <p>{{ resultado }}</p>
       </div>
     {% endif %}
 
-    <div class="button-row">
-      <form method="GET" action="{{ url_for('index') }}">
-        <button type="submit">Evaluar otra llamada</button>
-      </form>
-      <form method="GET" action="{{ url_for('historial') }}">
-        <button type="submit">Ver historial</button>
-      </form>
-      <form method="GET" action="{{ url_for('logout') }}">
-        <button type="submit">Cerrar sesión</button>
-      </form>
-    </div>
+    {% if segments %}
+      <h2>Transcripción por segmentos:</h2>
+      {% for s in segments %}
+        <div class="segmento">
+          <strong>[{{ s.start | round(2) }}s - {{ s.end | round(2) }}s]:</strong> {{ s.text }}
+        </div>
+      {% endfor %}
+      <audio controls>
+        <source src="{{ url_for('static', filename='audio.wav') }}" type="audio/wav">
+        Tu navegador no soporta la reproducción de audio.
+      </audio>
+    {% endif %}
   </div>
 </body>
 </html>
