@@ -46,7 +46,7 @@ def index():
 
 
     if request.method == "POST":
-        ejecutivo = request.form.get("evaluado", "SIN NOMBRE")
+        ejecutivo = request.form.get("ejecutivo", "SIN NOMBRE")
 
         audio_file = request.files["audio"]
         audio_path = "static/audio.wav"
