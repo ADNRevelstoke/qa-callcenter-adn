@@ -180,7 +180,7 @@ def dashboard():
 
     try:
         docs = db.collection("evaluaciones").where("evaluado", "==", correo).order_by("fecha", direction=firestore.Query.DESCENDING).stream()
-        )
+        
     except Exception as e:
         return f"Error al obtener evaluaciones desde Firestore: {e}"
 
