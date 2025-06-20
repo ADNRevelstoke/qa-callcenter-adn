@@ -173,7 +173,15 @@ def dashboard():
 
     nombre = session["usuario"]
 
-    docs = db.collection("evaluaciones").where("evaluado", "==", nombre).order_by("fecha", direction=firestore.Query.DESCENDING).stream()
+    try:
+        docs = list(
+            db.collection("evaluaciones")
+              .where("evaluado", "==", nombre)
+              .order_by("fecha", direction=firestore.Query.DESCENDING)
+              .stream()
+        )
+    except Exception as e:
+        return f"Error al obtener evaluaciones desde Firestore: {e}"
 
     historial = []
     scores = []
@@ -206,6 +214,7 @@ def dashboard():
 
     posicion = next((i + 1 for i, r in enumerate(ranking) if r[0] == nombre), None)
 
+    # RETROALIMENTACIÓN IA (no modificar el prompt)
     prompt = f"""
 Eres un coach experto en evaluación de calidad en call centers. Con base en las siguientes evaluaciones previas del asesor '{nombre}', genera un resumen de retroalimentación constructiva. Menciona fortalezas, áreas a mejorar y un consejo accionable.
 
