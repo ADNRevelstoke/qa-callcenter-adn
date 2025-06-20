@@ -151,7 +151,17 @@ Transcripción real:
         score_match = re.search(r"(\d{1,3})%", resultado)
         score = score_match.group(1) + "%" if score_match else "N/A"
 
+        # Guarda en archivo local (por compatibilidad con dashboard actual)
         guardar_en_historial(session["usuario"], ejecutivo, score, resultado)
+
+        # Guarda en Firestore para persistencia y futuros análisis
+        db.collection("evaluaciones").add({
+            "fecha": datetime.now().isoformat(),
+            "evaluador": session.get("usuario", "desconocido"),
+            "evaluado": ejecutivo,
+            "score": score,
+            "resumen": resultado
+        })
         return render_template("index.html", segments=segments, resultado=resultado, usuarios=get_ejecutivos())
 
     return render_template("index.html", segments=None, resultado=None, usuarios=get_ejecutivos())
@@ -164,18 +174,116 @@ def get_ejecutivos():
 def dashboard():
     if "usuario" not in session:
         return redirect(url_for("login"))
+
+    usuario = session["usuario"]
+    rol = session.get("rol", "")
+
+    # Leer evaluaciones desde Firestore
+    docs = db.collection("evaluaciones").where("evaluado", "==", usuario).stream()
+    historial = []
+    for doc in docs:
+        data = doc.to_dict()
+        historial.append({
+            "fecha": data.get("fecha", ""),
+            "score": data.get("score", "NA"),
+            "resumen": data.get("resumen", "")
+        })
+
+    # Calcular promedio y ranking ciego
+    docs_todos = db.collection("evaluaciones").stream()
+    scores_por_usuario = {}
+    for doc in docs_todos:
+        d = doc.to_dict()
+        eval_user = d.get("evaluado", "")
+        score = d.get("score", "").replace('%', '')
+        if eval_user and score.isdigit():
+            scores_por_usuario.setdefault(eval_user, []).append(int(score))
+
+    ranking = sorted(
+        [(user, sum(scores) // len(scores)) for user, scores in scores_por_usuario.items()],
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    posicion = next((i+1 for i, (user, _) in enumerate(ranking) if user == usuario), "Sin ranking")
+
+    return render_template("dashboard.html", historial=historial, ranking=ranking, mi_posicion=posicion)
+
+@app.route("/dashboard")
+def dashboard():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    nombre = session["usuario"]
+    if "usuario" not in session:
+        return redirect(url_for("login"))
+
+    # Obtener todas las evaluaciones de Firestore para el asesor
+    docs = db.collection("evaluaciones").where("evaluado", "==", nombre).order_by("fecha", direction=firestore.Query.DESCENDING).stream()
     
-    doc = db.collection("usuarios").document(session["usuario"]).get()
-    nombre = doc.to_dict().get("nombre", "Desconocido") if doc.exists else "Desconocido"
-    
-    try:
-        with open(HISTORIAL_FILE, "r") as f:
-            historial = json.load(f)
-    except FileNotFoundError:
-        historial = []
-    
-    personales = [h for h in historial if h["evaluado"] == nombre]
-    return render_template("dashboard.html", historial=personales, nombre=nombre)
+    historial = []
+    scores = []
+    fechas = []
+
+    for doc in docs:
+        data = doc.to_dict()
+        historial.append(data)
+        scores.append(int(data.get("score", "0").replace("%", "")))
+        fechas.append(data.get("fecha", "")[:10])  # Solo la fecha sin hora
+
+    # Calcular promedio del asesor
+    promedio_asesor = sum(scores) / len(scores) if scores else 0
+
+    # Obtener todos los promedios para calcular ranking
+    all_docs = db.collection("evaluaciones").stream()
+    promedios_por_asesor = {}
+
+    for doc in all_docs:
+        d = doc.to_dict()
+        ev = d.get("evaluado", "")
+        s = int(d.get("score", "0").replace("%", ""))
+        if ev not in promedios_por_asesor:
+            promedios_por_asesor[ev] = []
+        promedios_por_asesor[ev].append(s)
+
+    ranking = sorted(
+        [(k, sum(v) / len(v)) for k, v in promedios_por_asesor.items()],
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    posicion = next((i + 1 for i, r in enumerate(ranking) if r[0] == nombre), None)
+
+    # Generar retroalimentación con OpenAI
+    prompt = f"""
+Eres un coach experto en evaluación de calidad en call centers. Con base en las siguientes evaluaciones previas del asesor '{nombre}', genera un resumen de retroalimentación constructiva. Menciona fortalezas, áreas a mejorar y un consejo accionable.
+
+Evaluaciones previas:
+{[h['resumen'] for h in historial[:5]]}  # máximo 5 más recientes
+"""
+
+    import openai
+    openai.api_key = os.getenv("OPENAI_API_KEY")
+
+    retro_ai = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {"role": "system", "content": "Eres un experto en evaluación de calidad."},
+            {"role": "user", "content": prompt}
+        ]
+    ).choices[0].message['content']
+
+    return render_template("dashboard.html",
+        nombre=nombre,
+        usuario=nombre,
+        historial=historial,
+        fechas=fechas,
+        scores=scores,
+        promedio=int(promedio_asesor),
+        posicion=posicion,
+        ranking=[{"usuario": r[0], "score": int(r[1])} for r in ranking],
+        retro_ai=retro_ai
+    )
 
 @app.route("/historial")
 def historial():
