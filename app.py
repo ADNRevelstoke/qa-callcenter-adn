@@ -192,7 +192,9 @@ def dashboard():
     for doc in docs:
         data = doc.to_dict()
         historial.append(data)
-        scores.append(int(data.get("score", "0").replace("%", "")))
+        s = data.get("score", "0").replace("%", "")
+        if s.isdigit():
+            scores.append(int(s))
         fechas.append(data.get("fecha", "")[:10])
 
     promedio_asesor = sum(scores) / len(scores) if scores else 0
