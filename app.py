@@ -13,10 +13,7 @@ app.secret_key = os.getenv("SECRET_KEY", "clave-predeterminada")
 
 # Inicializa Firebase solo una vez
 if not firebase_admin._apps:
-    import io
-    firebase_credentials_str = os.environ["FIREBASE_CREDENTIALS_JSON"]
-    firebase_credentials_file = io.StringIO(firebase_credentials_str)
-    cred = credentials.Certificate(firebase_credentials_file)
+    cred = credentials.Certificate(json.loads(os.environ["FIREBASE_CREDENTIALS_JSON"]))
     firebase_admin.initialize_app(cred)
     db = firestore.client()
 
