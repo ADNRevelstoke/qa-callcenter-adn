@@ -1,105 +1,159 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Evaluación de llamadas</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-        }
-
-        video.bg-video {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            z-index: -1;
-        }
-
-        .container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.75);
-            padding: 30px;
-            border-radius: 12px;
-            color: white;
-            width: 400px;
-            box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-        }
-
-        select, input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 6px;
-            border: none;
-        }
-
-        button {
-            padding: 10px;
-            margin-top: 15px;
-            width: 100%;
-            background-color: #00b0f0;
-            color: #031b4e;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .control-buttons {
-            margin-top: 20px;
-        }
-
-        .control-buttons a {
-            display: inline-block;
-            margin: 5px 10px;
-            color: white;
-            text-decoration: none;
-        }
-    </style>
+  <title>Evaluador ADN - Llamadas</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: white;
+      color: #031b4e;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: white;
+      padding: 10px;
+      text-align: center;
+    }
+    .container {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    h2 { color: #00b0f0; }
+    .resultado, .transcripcion {
+      background-color: #f2f2f2;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .transcripcion p {
+      margin: 2px 0;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+    .transcripcion p:hover {
+      background-color: #007bff33;
+    }
+    .button-row {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #00b0f0;
+      color: #031b4e;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    input[type=file], select {
+      padding: 10px;
+      background: white;
+      color: black;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    #loaderModal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.7);
+    }
+    #loaderModalContent {
+      position: relative;
+      margin: 10% auto;
+      width: 50%;
+      text-align: center;
+    }
+    #loaderVideo {
+      max-width: 100%;
+      border-radius: 10px;
+    }
+  </style>
+  <script>
+    function showLoader() {
+      document.getElementById('loaderModal').style.display = 'block';
+      document.getElementById('loaderVideo').play();
+    }
+  </script>
 </head>
 <body>
-<video class="bg-video" autoplay muted loop>
-    <source src="{{ url_for('static', filename='sofi_ia_web.mp4') }}" type="video/mp4">
-</video>
+  <header>
+    <video autoplay muted loop playsinline style="width: 100%; max-height: 300px; object-fit: cover;">
+      <source src="{{ url_for('static', filename='banner.mp4') }}" type="video/mp4">
+      Tu navegador no soporta videos.
+    </video>
+  </header>
 
-<div class="container">
-    <h2>Evaluación de llamadas</h2>
-    <form method="POST" enctype="multipart/form-data">
-        {% if session['rol'] in ['admin', 'validador'] %}
-        <label for="evaluado">Selecciona al ejecutivo evaluado:</label>
-        <select name="evaluado" required>
-            <option value="">-- Selecciona un nombre --</option>
-            {% for nombre in usuarios %}
-            <option value="{{ nombre }}">{{ nombre }}</option>
-            {% endfor %}
-        </select>
-        {% endif %}
-
-        <input type="file" name="audio" accept="audio/*" required>
-        <button type="submit">Evaluar llamada</button>
-    </form>
-
-    <div class="control-buttons">
-        <a href="{{ url_for('index') }}">Evaluar otra llamada</a>
-        <a href="{{ url_for('historial') }}">Ver historial</a>
-        <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+  <div id="loaderModal">
+    <div id="loaderModalContent">
+      <video id="loaderVideo" src="{{ url_for('static', filename='loader.mp4') }}" autoplay loop muted></video>
     </div>
+  </div>
+
+  <div class="container">
+    {% if not resultado %}
+      <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
+        <input type="file" name="audio" accept=".wav" required><br><br>
+        {% if session['rol'] == 'validador' or session['rol'] == 'admin' %}
+        <label for="ejecutivo">Selecciona al asesor evaluado:</label><br>
+        <select name="ejecutivo" required>
+          <option value="">-- Selecciona un asesor --</option>
+          {% for usuario in usuarios %}
+            <option value="{{ usuario }}">{{ usuario }}</option>
+          {% endfor %}
+        </select><br><br>
+        {% endif %}
+        <button type="submit">Evaluar llamada</button>
+      </form>
+    {% else %}
+      <div class="resultado">
+        <h2>Resultado:</h2>
+        <pre>
+{% set partes = resultado.split("Observaciones:") %}
+{{ partes[0].strip() }}
+
+{% if partes|length > 1 %}
+<strong style="color:#00b0f0;">Observaciones:</strong>
+<div style="background-color: #ffffffaa; padding: 15px; border-left: 5px solid #00b0f0; margin-top: 10px; color:#031b4e; white-space: pre-wrap;">
+  {{ partes[1].strip() }}
 </div>
+{% endif %}
+        </pre>
+      </div>
+
+      <div class="transcripcion">
+        <audio id="audio" controls src="{{ url_for('static', filename='audio.wav') }}"></audio><br><br>
+        {% for s in segments %}
+          <p onclick="document.getElementById('audio').currentTime={{ s['start'] }}; document.getElementById('audio').play();">
+            {{ s['text'] }}
+          </p>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="button-row">
+      <form method="GET" action="{{ url_for('index') }}">
+        <button type="submit">Evaluar otra llamada</button>
+      </form>
+      <form method="GET" action="{{ url_for('historial') }}">
+        <button type="submit">Ver historial</button>
+      </form>
+      <form method="GET" action="{{ url_for('logout') }}">
+        <button type="submit">Cerrar sesión</button>
+      </form>
+    </div>
+  </div>
 </body>
 </html>

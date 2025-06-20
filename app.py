@@ -157,7 +157,7 @@ Transcripción real:
     return render_template("index.html", segments=None, resultado=None, usuarios=get_ejecutivos())
 
 def get_ejecutivos():
-    docs = db.collection("usuarios").where("rol", "==", "ejecutivo").stream()
+    docs = db.collection("usuarios").where("rol", "==", "asesor").stream()
     return [doc.to_dict().get("nombre", "") for doc in docs]
 
 @app.route("/dashboard")
@@ -194,8 +194,7 @@ def login():
         clave = request.form["password"]
 
         try:
-            user = auth.get_user_by_email(usuario)
-
+            # Autenticación con Firebase Auth
             import requests
             firebase_api_key = os.environ.get("FIREBASE_API_KEY")
             payload = {
@@ -203,18 +202,28 @@ def login():
                 "password": clave,
                 "returnSecureToken": True
             }
-            r = requests.post(f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={firebase_api_key}", json=payload)
+            r = requests.post(
+                f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={firebase_api_key}",
+                json=payload
+            )
+
             if r.status_code != 200:
                 error = "Usuario o contraseña incorrectos"
                 return render_template("login.html", error=error)
 
+            # Revisión del rol en Firestore
             doc_ref = db.collection("usuarios").document(usuario)
             doc = doc_ref.get()
             if doc.exists:
                 rol = doc.to_dict().get("rol", "")
                 session["usuario"] = usuario
                 session["rol"] = rol
-                return redirect(url_for("index"))
+
+                # Redirige según el rol
+                if rol == "asesor":
+                    return redirect(url_for("dashboard"))
+                else:
+                    return redirect(url_for("index"))
             else:
                 error = "Usuario sin rol asignado en base de datos"
 
