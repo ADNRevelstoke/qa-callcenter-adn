@@ -223,6 +223,27 @@ def login():
 
     return render_template("login.html", error=error)
 
+@app.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    mensaje = None
+    if request.method == "POST":
+        email = request.form["email"]
+        try:
+            firebase_api_key = os.environ.get("FIREBASE_API_KEY")
+            import requests
+            payload = {"requestType": "PASSWORD_RESET", "email": email}
+            r = requests.post(
+                f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={firebase_api_key}",
+                json=payload,
+            )
+            if r.status_code == 200:
+                mensaje = "📧 Te hemos enviado un correo para restablecer tu contraseña."
+            else:
+                mensaje = "❌ No se pudo enviar el correo. Verifica el email o intenta más tarde."
+        except Exception as e:
+            mensaje = f"⚠️ Error al procesar la solicitud: {e}"
+    return render_template("reset_password.html", mensaje=mensaje)
+
 @app.route("/logout")
 def logout():
     session.pop("usuario", None)
