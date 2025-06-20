@@ -5,37 +5,19 @@ import re
 import json
 from dotenv import load_dotenv
 from datetime import datetime
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 
 # Inicializa Firebase solo una vez
 if not firebase_admin._apps:
-    cred = credentials.Certificate("secrets/firebase_key.json")  # Asegúrate de que esta ruta sea correcta
+    firebase_credentials = json.loads(os.environ["FIREBASE_CREDENTIALS_JSON"])
+    cred = credentials.Certificate(firebase_credentials)
     firebase_admin.initialize_app(cred)
     db = firestore.client()
 
 # Carga clave OpenAI
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Usuarios desde Google Sheets
-def cargar_usuarios_desde_sheets():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    credentials_info = json.loads(os.environ["GOOGLE_SHEETS_CREDENTIALS_JSON"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
-    client = gspread.authorize(creds)
-    sheet = client.open_by_key(os.environ["SHEET_ID"]).worksheet("Lista")
-    data = sheet.get_all_records(expected_headers=["NombreUsuario", "NombreCompleto", "Rol", "Password"])
-    return {
-        row["NombreUsuario"]: {
-            "password": row["Password"],
-            "nombre": row["NombreCompleto"],
-            "rol": row["Rol"]
-        } for row in data
-    }
-
-USUARIOS = cargar_usuarios_desde_sheets()
 HISTORIAL_FILE = "historial.json"
 
 def guardar_en_historial(usuario, ejecutivo, score, resumen):
@@ -60,8 +42,6 @@ def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    global USUARIOS
-    USUARIOS = cargar_usuarios_desde_sheets()
 
     if request.method == "POST":
         ejecutivo = "SIN NOMBRE"
@@ -175,18 +155,23 @@ Transcripción real:
     return render_template("index.html", segments=None, resultado=None, usuarios=get_ejecutivos())
 
 def get_ejecutivos():
-    return [v["nombre"] for v in USUARIOS.values() if v["rol"] == "ejecutivo"]
+    docs = db.collection("usuarios").where("rol", "==", "ejecutivo").stream()
+    return [doc.to_dict().get("nombre", "") for doc in docs]
 
 @app.route("/dashboard")
 def dashboard():
     if "usuario" not in session:
         return redirect(url_for("login"))
-    nombre = USUARIOS[session["usuario"]]["nombre"]
+    
+    doc = db.collection("usuarios").document(session["usuario"]).get()
+    nombre = doc.to_dict().get("nombre", "Desconocido") if doc.exists else "Desconocido"
+    
     try:
         with open(HISTORIAL_FILE, "r") as f:
             historial = json.load(f)
     except FileNotFoundError:
         historial = []
+    
     personales = [h for h in historial if h["evaluado"] == nombre]
     return render_template("dashboard.html", historial=personales, nombre=nombre)
 
