@@ -305,3 +305,8 @@ def reset_password():
         except Exception as e:
             mensaje = "⚠️ Error al procesar la solicitud: " + str(e)
     return render_template("reset_password.html", mensaje=mensaje)
+
+
+if __name__ == "__main__":
+    print("🚀 Aplicación Flask iniciando...")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
