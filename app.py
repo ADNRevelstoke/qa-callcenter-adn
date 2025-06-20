@@ -8,6 +8,9 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 
+app = Flask(__name__)
+app.secret_key = os.getenv("SECRET_KEY", "clave-predeterminada")
+
 # Inicializa Firebase solo una vez
 if not firebase_admin._apps:
     firebase_credentials = json.loads(os.environ["FIREBASE_CREDENTIALS_JSON"])
