@@ -1,121 +1,113 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard de Evaluaciones</title>
+  <title>Dashboard del Asesor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background-color: #031b4e;
       color: white;
       margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #021234;
-      padding: 10px;
-      text-align: center;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
       padding: 20px;
     }
-    h1 {
+    h2 {
       color: #00b0f0;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      background-color: #0f2a60;
+      margin-top: 20px;
     }
     th, td {
+      border: 1px solid #0f2a60;
       padding: 10px;
-      border: 1px solid #ccc;
-      color: white;
       text-align: left;
     }
     th {
       background-color: #021234;
     }
-    input, button {
-      margin: 10px 0;
-      padding: 8px;
-      border-radius: 4px;
+    tr:nth-child(even) {
+      background-color: #0f2a60;
     }
-    .logout {
+    .retro-box, .ranking-box {
+      background-color: #0f2a60;
+      padding: 15px;
+      border-radius: 8px;
       margin-top: 20px;
+    }
+    .chart-container {
+      margin-top: 40px;
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Dashboard de Evaluaciones</h1>
-  </header>
-  <div class="container">
-    <label for="desde">Desde: </label>
-    <input type="date" id="desde">
-    <label for="hasta">Hasta: </label>
-    <input type="date" id="hasta">
-    <button onclick="filtrar()">Filtrar</button>
+  <h2>Evaluaciones Recientes</h2>
+  <table>
+    <tr>
+      <th>Fecha</th>
+      <th>Score</th>
+      <th>Resumen</th>
+    </tr>
+    {% for entrada in historial %}
+    <tr>
+      <td>{{ entrada.fecha }}</td>
+      <td>{{ entrada.score }}</td>
+      <td><pre>{{ entrada.resumen }}</pre></td>
+    </tr>
+    {% endfor %}
+  </table>
 
-    <table id="tabla">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Usuario</th>
-          <th>Score</th>
-          <th>Resumen</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <div class="logout">
-      <form method="GET" action="/logout">
-        <button type="submit">Cerrar sesión</button>
-      </form>
-    </div>
+  <div class="chart-container">
+    <h2 style="color:#031b4e">Evolución de Score</h2>
+    <canvas id="scoreChart"></canvas>
   </div>
 
+  <div class="ranking-box">
+    <h2>Ranking Anónimo</h2>
+    <ol>
+      {% for r in ranking %}
+        <li>{{ 'Tú' if r.usuario == usuario else 'Asesor' }} - {{ r.score }}</li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <div class="retro-box">
+    <h2>Retroalimentación Inteligente</h2>
+    <p>{{ retro_ai }}</p>
+  </div>
+
+  <form method="GET" action="{{ url_for('logout') }}">
+    <button type="submit" style="margin-top: 20px">Cerrar sesión</button>
+  </form>
+
   <script>
-    let datos = [];
-
-    async function cargarDatos() {
-      const res = await fetch('/static/historial.json');
-      datos = await res.json();
-      mostrarTabla(datos);
-    }
-
-    function mostrarTabla(filas) {
-      const tbody = document.querySelector("#tabla tbody");
-      tbody.innerHTML = "";
-      filas.forEach(f => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${f.fecha}</td>
-          <td>${f.usuario}</td>
-          <td>${f.score}</td>
-          <td>${f.resumen.replaceAll('\n', '<br>')}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function filtrar() {
-      const desde = document.getElementById("desde").value;
-      const hasta = document.getElementById("hasta").value;
-      const desdeFecha = desde ? new Date(desde) : null;
-      const hastaFecha = hasta ? new Date(hasta) : null;
-
-      const filtrados = datos.filter(f => {
-        const fechaEval = new Date(f.fecha);
-        return (!desdeFecha || fechaEval >= desdeFecha) && (!hastaFecha || fechaEval <= hastaFecha);
-      });
-      mostrarTabla(filtrados);
-    }
-
-    cargarDatos();
+    const ctx = document.getElementById('scoreChart').getContext('2d');
+    const scoreChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ fechas | safe }},
+        datasets: [{
+          label: 'Score',
+          data: {{ scores | safe }},
+          borderColor: '#00b0f0',
+          backgroundColor: 'rgba(0,176,240,0.2)',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>
