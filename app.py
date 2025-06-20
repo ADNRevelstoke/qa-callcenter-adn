@@ -44,6 +44,9 @@ def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
+    rol = session.get("rol", "asesor")
+    usuarios = get_ejecutivos()  # Asegúrate que esta función está definida
+
     if request.method == "POST":
         ejecutivo = request.form.get("ejecutivo", "SIN NOMBRE")
         audio_file = request.files["audio"]
@@ -59,6 +62,8 @@ def index():
             s["text"] = s["text"].replace("\n", " ").strip()
 
         full_text = " ".join([s["text"] for s in segments])
+
+        # Aquí sigue tu PROMPT que no tocaremos...
 
         prompt = f'''Asume el rol de un analista de calidad y evalúa la siguiente transcripción de una llamada entre un asesor y un cliente. 
 
@@ -158,27 +163,23 @@ Transcripción real:
             "score": score,
             "resumen": resultado
         })
-        return render_template("index.html", segments=segments, resultado=resultado, usuarios=get_ejecutivos())
+        return render_template("index.html", resultado=resultado, segments=segments, usuarios=usuarios)
 
-    return render_template("index.html", segments=None, resultado=None, usuarios=get_ejecutivos())
+    return render_template("index.html", resultado=None, segments=None, usuarios=usuarios)
 
 def get_ejecutivos():
     docs = db.collection("usuarios").where("rol", "==", "asesor").stream()
-    return [doc.to_dict().get("nombre", "") for doc in docs]
+    return [doc.to_dict().get("email", "") for doc in docs if "email" in doc.to_dict()]
 
 @app.route("/dashboard")
 def dashboard():
     if "usuario" not in session:
         return redirect(url_for("login"))
 
-    nombre = session["usuario"]
+    correo = session["usuario"]  # Esto es el correo del asesor logueado
 
     try:
-        docs = list(
-            db.collection("evaluaciones")
-              .where("evaluado", "==", nombre)
-              .order_by("fecha", direction=firestore.Query.DESCENDING)
-              .stream()
+        docs = db.collection("evaluaciones").where("evaluado", "==", correo).order_by("fecha", direction=firestore.Query.DESCENDING).stream()
         )
     except Exception as e:
         return f"Error al obtener evaluaciones desde Firestore: {e}"
@@ -212,11 +213,11 @@ def dashboard():
         reverse=True
     )
 
-    posicion = next((i + 1 for i, r in enumerate(ranking) if r[0] == nombre), None)
+    posicion = next((i + 1 for i, r in enumerate(ranking) if r[0] == correo), None)
 
     # RETROALIMENTACIÓN IA (no modificar el prompt)
     prompt = f"""
-Eres un coach experto en evaluación de calidad en call centers. Con base en las siguientes evaluaciones previas del asesor '{nombre}', genera un resumen de retroalimentación constructiva. Menciona fortalezas, áreas a mejorar y un consejo accionable.
+Eres un coach experto en evaluación de calidad en call centers. Con base en las siguientes evaluaciones previas del asesor '{correo}', ...
 
 Evaluaciones previas:
 {[h['resumen'] for h in historial[:5]]}  # máximo 5 más recientes
@@ -231,8 +232,8 @@ Evaluaciones previas:
     ).choices[0].message['content']
 
     return render_template("dashboard.html",
-        nombre=nombre,
-        usuario=nombre,
+        nombre=correo,
+        usuario=correo,
         historial=historial,
         fechas=fechas,
         scores=scores,
