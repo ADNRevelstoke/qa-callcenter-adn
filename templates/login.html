@@ -78,6 +78,8 @@
       <input type="password" name="password" placeholder="Contraseña" required>
       <button type="submit">Entrar</button>
     </form>
+
+    <a href="{{ url_for('reset_password') }}">¿Olvidaste tu contraseña?</a>
     {% if error %}
       <div class="error">{{ error }}</div>
     {% endif %}
