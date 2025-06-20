@@ -151,8 +151,9 @@ Transcripción real:
         )
 
         resultado = response.choices[0].message["content"]
-        score_match = re.search(r"(\d{1,3})%", resultado)
-        score = score_match.group(1) + "%" if score_match else "N/A"
+        cumplidos = len(re.findall(r"✅", resultado))
+        total = 11  # criterios definidos en el prompt
+        score = f"{int((cumplidos / total) * 100)}%"
 
         guardar_en_historial(session["usuario"], ejecutivo, score, resultado)
 
