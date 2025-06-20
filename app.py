@@ -12,7 +12,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth
 
 # Ruta al archivo de configuración
-cred = credentials.Certificate("downloads/evaluador-web-adn.txt")
+cred = credentials.Certificate("firebase_key.json")
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
