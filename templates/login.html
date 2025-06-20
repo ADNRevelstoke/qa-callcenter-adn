@@ -1,37 +1,40 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
+  <meta charset="UTF-8">
   <title>Login - Evaluador ADN</title>
   <style>
     body, html {
       margin: 0;
       padding: 0;
+      width: 100%;
       height: 100%;
       overflow: hidden;
       font-family: Arial, sans-serif;
     }
 
-    .bg-video {
-      position: fixed;
+    video.bg-video {
+      position: absolute;
       top: 0;
       left: 0;
-      min-width: 100%;
-      min-height: 100%;
+      width: 100vw;
+      height: 100vh;
       object-fit: cover;
       z-index: -1;
     }
 
     .login-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       background-color: rgba(0, 0, 0, 0.7);
       padding: 30px;
       border-radius: 8px;
       width: 300px;
       text-align: center;
       color: white;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
     }
 
     .login-box img {
@@ -65,13 +68,10 @@
 
     a {
       color: white;
-      text-decoration: none;
+      text-decoration: underline;
+      font-size: 14px;
       display: block;
       margin-top: 10px;
-    }
-
-    a:hover {
-      color: #ddd;
     }
   </style>
 </head>
@@ -91,7 +91,6 @@
     </form>
 
     <a href="{{ url_for('reset_password') }}">¿Olvidaste tu contraseña?</a>
-
     {% if error %}
       <div class="error">{{ error }}</div>
     {% endif %}
