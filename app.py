@@ -299,4 +299,9 @@ def reset_password():
                 json=payload,
             )
             if r.status_code == 200:
-                mensaje = "⚠️ Error al procesar la solicitud: " + str(e)
+                mensaje = "📧 Te hemos enviado un correo para restablecer tu contraseña."
+            else:
+                mensaje = "❌ No se pudo enviar el correo. Verifica el email o intenta más tarde."
+        except Exception as e:
+            mensaje = "⚠️ Error al procesar la solicitud: " + str(e)
+    return render_template("reset_password.html", mensaje=mensaje)
