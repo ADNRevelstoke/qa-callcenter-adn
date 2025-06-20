@@ -299,4 +299,4 @@ def reset_password():
                 json=payload,
             )
             if r.status_code == 200:
-                mensaje = "
+                mensaje = "⚠️ Error al procesar la solicitud: " + str(e)
